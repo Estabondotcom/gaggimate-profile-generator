@@ -47,7 +47,7 @@
     }
 
     header {
-      margin-bottom: 1.25rem;
+      margin-bottom: 0.5rem;
     }
 
     h1 {
@@ -152,6 +152,14 @@
       flex-wrap: wrap;
       gap: 0.5rem;
       margin-top: 0.6rem;
+    }
+
+    .btn-row-right {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 0.75rem;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .btn {
@@ -496,6 +504,10 @@
       .segmented-group {
         width: 100%;
       }
+
+      .btn-row-right {
+        justify-content: flex-start;
+      }
     }
   </style>
 </head>
@@ -507,6 +519,17 @@
         Build and tweak Pro profiles on your phone, then export JSON for GaggiMate.
       </div>
     </header>
+
+    <!-- Top import button -->
+    <div class="btn-row-right">
+      <button id="import-json" class="btn btn-sm">⬆ Import profile</button>
+      <input
+        id="import-file"
+        type="file"
+        accept="application/json,.json"
+        style="display:none"
+      />
+    </div>
 
     <!-- Profile header -->
     <section class="card">
@@ -616,14 +639,7 @@
       <div class="json-actions">
         <button id="download-json" class="btn btn-primary">⬇ Download JSON</button>
         <button id="copy-json" class="btn">📋 Copy JSON</button>
-        <button id="import-json" class="btn">⬆ Import profile</button>
       </div>
-      <input
-        id="import-file"
-        type="file"
-        accept="application/json,.json"
-        style="display:none"
-      />
     </section>
   </main>
 
@@ -1832,3 +1848,4 @@
   </script>
 </body>
 </html>
+
