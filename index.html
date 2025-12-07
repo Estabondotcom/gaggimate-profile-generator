@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>GaggiMate Pro Profile Builder (Offline)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Chart.js from CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
@@ -15,80 +14,106 @@
       --border-strong: #374151;
       --text: #e5e7eb;
       --text-muted: #9ca3af;
-      --text-soft: #6b7280;
+      --accent: #38bdf8;
+      --accent-soft: #0ea5e9;
+      --danger: #ef4444;
+      --radius-lg: 1rem;
+      --radius-md: 0.75rem;
+      --radius-sm: 0.5rem;
     }
 
     * {
       box-sizing: border-box;
     }
 
+    html,
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #020617 0, #020617 45%, #000 100%);
+      padding: 0;
+      background: radial-gradient(circle at top, #0f172a 0, #020617 55%);
       color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Inter", "Helvetica Neue", Arial, sans-serif;
     }
 
-    .app {
-      max-width: 1200px;
+    body {
+      min-height: 100vh;
+    }
+
+    main.page {
+      max-width: 960px;
       margin: 0 auto;
-      padding: 1rem;
+      padding: 1rem clamp(1rem, 4vw, 1.5rem) 3.5rem;
+    }
+
+    header {
+      margin-bottom: 1.25rem;
     }
 
     h1 {
-      font-size: clamp(1.4rem, 4vw, 1.75rem);
-      margin-bottom: 0.25rem;
+      font-size: clamp(1.7rem, 4.2vw, 2.2rem);
+      letter-spacing: 0.01em;
+      margin: 0;
     }
 
-    h2 {
-      font-size: clamp(0.95rem, 2.4vw, 1.05rem);
-      margin: 1.25rem 0 0.4rem;
-    }
-
-    p {
-      margin: 0.25rem 0 0.75rem;
+    .subtitle {
+      margin-top: 0.4rem;
       color: var(--text-muted);
       font-size: 0.9rem;
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 1rem;
-      margin-top: 1rem;
+    h2 {
+      font-size: clamp(1.05rem, 3vw, 1.2rem);
+      margin: 0 0 0.35rem;
+    }
+
+    .small {
+      font-size: 0.8rem;
+      color: var(--text-muted);
     }
 
     .card {
-      background: var(--bg-elevated);
-      border-radius: 0.9rem;
-      padding: 0.85rem 0.85rem 1rem;
+      background: linear-gradient(135deg, #020617, #020617);
+      border-radius: var(--radius-lg);
       border: 1px solid var(--border-subtle);
-      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
+      padding: 1rem 1rem 1.1rem;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.55);
+      margin-bottom: 1rem;
+    }
+
+    .card + .card {
+      margin-top: 0.75rem;
     }
 
     label {
       display: block;
-      font-size: 0.8rem;
-      margin-bottom: 0.2rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
       color: var(--text-muted);
+      margin-bottom: 0.25rem;
     }
 
-    input[type="text"],
-    input[type="number"],
+    input,
     select,
     textarea {
       width: 100%;
-      padding: 0.4rem 0.55rem;
-      border-radius: 0.55rem;
+      padding: 0.45rem 0.6rem;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--border-strong);
       background: #020617;
       color: var(--text);
       font-size: 0.85rem;
     }
 
+    input::placeholder,
+    textarea::placeholder {
+      color: #6b7280;
+    }
+
     textarea {
-      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-        "Liberation Mono", "Courier New", monospace;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+        Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       resize: vertical;
       min-height: 220px;
       white-space: pre;
@@ -98,89 +123,73 @@
     select:focus,
     textarea:focus {
       outline: none;
-      border-color: #38bdf8;
-      box-shadow: 0 0 0 1px #38bdf8;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
     }
 
     .field-row {
       display: flex;
-      gap: 0.75rem;
       flex-wrap: wrap;
+      gap: 0.75rem;
     }
 
     .field-row > div {
-      flex: 1;
-      min-width: 140px;
+      flex: 1 1 120px;
+      min-width: 0;
     }
 
-    /* Tables -------------------------------------------------- */
-    .table-scroll {
-      width: 100%;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+    .field-row > .field-small {
+      flex: 0 0 120px;
     }
 
-    .table-scroll table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 560px; /* keeps columns readable on phones, scrollable if needed */
+    .mt-1 {
+      margin-top: 0.25rem;
+    }
+    .mt-2 {
+      margin-top: 0.5rem;
+    }
+    .mt-3 {
+      margin-top: 0.75rem;
+    }
+    .mt-4 {
+      margin-top: 1rem;
     }
 
-    table {
-      border-collapse: collapse;
-      font-size: 0.8rem;
-    }
-
-    th,
-    td {
-      padding: 0.35rem 0.45rem;
-      text-align: left;
-      border-bottom: 1px solid #111827;
-      vertical-align: middle;
-    }
-
-    th {
-      font-weight: 500;
-      color: var(--text-muted);
-      white-space: nowrap;
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.6rem;
     }
 
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.25rem;
-      padding: 0.35rem 0.8rem;
+      gap: 0.3rem;
       border-radius: 999px;
-      border: 1px solid var(--border-subtle);
-      background: #111827;
+      border: 1px solid var(--border-strong);
+      padding: 0.4rem 0.9rem;
+      font-size: 0.82rem;
+      background: #020617;
       color: var(--text);
-      font-size: 0.78rem;
       cursor: pointer;
+      transition: background 0.12s ease, filter 0.12s ease,
+        border-color 0.12s ease;
       white-space: nowrap;
-      transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
-    }
-
-    .btn:active {
-      transform: translateY(1px);
-      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
-    }
-
-    .btn-primary {
-      background: linear-gradient(to right, #22c55e, #38bdf8);
-      border-color: transparent;
-      color: #020617;
-      font-weight: 600;
     }
 
     .btn-sm {
-      padding: 0.28rem 0.7rem;
-      border-radius: 999px;
-      font-size: 0.74rem;
+      padding-block: 0.3rem;
+      padding-inline: 0.7rem;
+      font-size: 0.78rem;
     }
 
-    .btn:hover {
-      filter: brightness(1.08);
+    .btn-primary {
+      background: var(--accent-soft);
+      border-color: var(--accent-soft);
+      color: #f9fafb;
+      font-weight: 500;
     }
 
     .btn-danger {
@@ -195,396 +204,368 @@
       color: var(--text-muted);
     }
 
-    .btn-row {
+    .btn:hover {
+      filter: brightness(1.08);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.1rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid #111827;
+      background: #020617;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+    }
+
+    .pill-chip {
+      font-size: 0.72rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+
+    .chart-wrapper {
+      margin-top: 0.5rem;
+      border-radius: var(--radius-md);
+      background: radial-gradient(circle at top, #0b1120 0, #020617 70%);
+      border: 1px solid #111827;
+      padding: 0.4rem;
+    }
+
+    canvas {
+      width: 100% !important;
+      max-height: 260px;
+    }
+
+    /* --------- Phases as accordions --------- */
+
+    .phases-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-top: 0.4rem;
+    }
+
+    details.phase-card {
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: radial-gradient(circle at top left, #020617 0, #020617 55%);
+      overflow: hidden;
+    }
+
+    details.phase-card[open] {
+      border-color: var(--accent-soft);
+    }
+
+    .phase-summary {
+      list-style: none;
+      padding: 0.55rem 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .phase-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .phase-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .phase-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .phase-chevron {
+      margin-left: auto;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      transform: rotate(0deg);
+      transition: transform 0.12s ease;
+    }
+
+    details[open] .phase-chevron {
+      transform: rotate(90deg);
+    }
+
+    .phase-body {
+      padding: 0.65rem 0.75rem 0.75rem;
+      border-top: 1px solid #111827;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .phase-section-title {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.15rem;
+    }
+
+    .phase-section {
+      border-radius: 0.65rem;
+      background: #020617;
+      border: 1px solid #111827;
+      padding: 0.5rem 0.55rem 0.55rem;
+    }
+
+    /* Targets table */
+
+    .targets-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .targets-table th,
+    .targets-table td {
+      padding: 0.25rem 0.3rem;
+      text-align: left;
+    }
+
+    .targets-table th {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      border-bottom: 1px solid #111827;
+    }
+
+    .targets-table td:last-child {
+      width: 1%;
+      white-space: nowrap;
+    }
+
+    .targets-table input,
+    .targets-table select {
+      font-size: 0.8rem;
+      padding: 0.32rem 0.45rem;
+    }
+
+    .targets-help {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+    }
+
+    .targets-buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.3rem;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      background: #030712;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* JSON + actions */
+
+    .json-actions {
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
       margin-top: 0.5rem;
     }
 
-    .tag {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.1rem 0.5rem;
-      border-radius: 999px;
-      background: #0b1120;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      border: 1px solid var(--border-subtle);
-      gap: 0.3rem;
-    }
-
-    .tag-dot {
-      width: 0.45rem;
-      height: 0.45rem;
-      border-radius: 999px;
-      background: #38bdf8;
-    }
-
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.2rem 0.55rem;
-      border-radius: 999px;
-      background: #111827;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      border: 1px solid var(--border-subtle);
-    }
-
-    .mt-1 { margin-top: 0.25rem; }
-    .mt-2 { margin-top: 0.5rem; }
-    .mt-3 { margin-top: 0.75rem; }
-    .mt-4 { margin-top: 1rem; }
-
-    .small {
-      font-size: 0.75rem;
-      color: var(--text-soft);
-    }
-
-    .chart-wrapper {
-      position: relative;
-      height: 260px;
-    }
-
-    .text-right {
-      text-align: right;
-    }
-
-    .pill {
-      padding: 0.1rem 0.5rem;
-      border-radius: 999px;
-      border: 1px solid var(--border-subtle);
-      background: #020617;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    /* --------- Responsive tweaks ------------------------------- */
-
-    @media (min-width: 900px) {
-      .grid {
-        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.1fr);
-      }
-    }
-
-    @media (max-width: 768px) {
-      .app {
-        padding: 0.75rem 0.5rem 1rem;
+    @media (max-width: 640px) {
+      main.page {
+        padding-inline: 0.75rem;
+        padding-bottom: 2.75rem;
       }
 
       .card {
-        padding: 0.75rem 0.7rem 0.9rem;
         border-radius: 0.85rem;
       }
 
-      .chart-wrapper {
-        height: 220px;
+      .phase-summary {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
       }
 
-      textarea {
-        min-height: 190px;
-        font-size: 0.78rem;
+      .phase-chevron {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
       }
 
-      .btn-row {
-        gap: 0.4rem;
+      .field-row > div,
+      .field-row > .field-small {
+        flex: 1 1 100%;
       }
 
-      .btn {
-        padding-inline: 0.7rem;
-      }
-    }
-
-    @media (max-width: 540px) {
-      h1 {
-        text-align: center;
-      }
-
-      .card {
-        border-radius: 0.8rem;
-      }
-
-      .btn-row {
-        flex-direction: row;
-      }
-
-      /* Main actions more usable on tiny screens */
-      .btn-row .btn-primary,
-      .btn-row .btn {
-        flex: 1 1 48%;
-        justify-content: center;
-      }
-
-      .table-scroll table {
-        min-width: 520px;
+      canvas {
+        max-height: 220px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <h1>GaggiMate Pro Profile Builder (Offline)</h1>
-    <p>
-      Build <strong>Pro</strong> brew profiles away from your machine. This editor matches the JSON
-      structure of GaggiMate Pro profiles (temperature, flow, pressure, transitions, volumetric
-      targets) and lets you preview the brew curve and export to <code>.json</code>.
-    </p>
+  <main class="page">
+    <header>
+      <h1>GaggiMate Pro Profile Builder</h1>
+      <div class="subtitle">
+        Build and tweak Pro profiles on your phone, then export JSON for GaggiMate.
+      </div>
+    </header>
 
-    <div class="grid">
-      <!-- LEFT: Profile + phases -->
-      <div class="card">
-        <h2>Profile Settings</h2>
-        <div class="field-row">
-          <div>
-            <label for="profile-label">Profile name</label>
-            <input id="profile-label" type="text" />
-          </div>
-          <div>
-            <label for="profile-type">Type</label>
-            <select id="profile-type" disabled>
-              <option value="pro">pro</option>
-            </select>
-          </div>
-        </div>
+    <!-- Profile header -->
+    <section class="card">
+      <h2>Profile</h2>
+      <p class="small">
+        Basic metadata and default brew temperature. Utility profiles are for rinses, backflush,
+        etc.
+      </p>
 
-        <div class="field-row mt-2">
-          <div>
-            <label for="profile-temp">Global temperature (°C)</label>
-            <input id="profile-temp" type="number" min="80" max="105" step="0.1" />
-          </div>
-          <div style="display:flex; align-items:flex-end; gap:0.4rem;">
-            <div>
-              <label for="profile-utility">Utility profile?</label>
-              <select id="profile-utility">
-                <option value="false">No (brew profile)</option>
-                <option value="true">Yes (utility)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-2">
-          <label for="profile-description">Description</label>
+      <div class="field-row mt-2">
+        <div>
+          <label for="profile-label">Label</label>
           <input
-            id="profile-description"
+            id="profile-label"
             type="text"
-            placeholder="Notes about intended bean, ratio, etc."
+            placeholder="E.g. Ethiopian 1:2.5 flow profile"
           />
         </div>
-
-        <div class="mt-3">
-          <span class="tag">
-            <span class="tag-dot"></span>
-            Pro profile JSON (flow / pressure / weight)
-          </span>
+        <div class="field-small">
+          <label for="profile-type">Type</label>
+          <select id="profile-type">
+            <option value="pro">pro</option>
+            <option value="basic">basic</option>
+          </select>
         </div>
-
-        <h2 class="mt-4">Phases</h2>
-        <p class="small">
-          Each phase can set its own temperature override, pump mode (off or flow/pressure/power),
-          valve state, and stop conditions via <strong>targets</strong>.
-        </p>
-
-        <div class="table-scroll mt-2">
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 18%;">Name</th>
-                <th style="width: 14%;">Type</th>
-                <th style="width: 10%;">Dur (s)</th>
-                <th style="width: 10%;">Temp (°C)</th>
-                <th style="width: 10%;">Valve</th>
-                <th style="width: 12%;">Pump mode</th>
-                <th style="width: 12%;">Pressure (bar)</th>
-                <th style="width: 12%;">Flow (ml/s)</th>
-                <th style="width: 2%;"></th>
-              </tr>
-            </thead>
-            <tbody id="phases-body">
-              <!-- Filled by JS -->
-            </tbody>
-          </table>
+        <div class="field-small">
+          <label for="profile-temp">Temp (°C)</label>
+          <input id="profile-temp" type="number" step="0.1" />
         </div>
-
-        <div class="btn-row mt-2">
-          <button id="add-phase" class="btn btn-sm">+ Add phase</button>
-          <button id="reset-profile" class="btn btn-sm btn-ghost">
-            Reset to example profile
-          </button>
-        </div>
-
-        <h2 class="mt-4">Selected Phase: Targets & Transition</h2>
-        <p class="small">
-          Choose a phase, then edit its stop conditions (<code>targets</code>) and transition.
-          Volumetric targets act as <strong>brew-by-weight</strong> when a scale is paired.
-        </p>
-        <div class="field-row mt-2">
-          <div>
-            <label for="selected-phase">Phase</label>
-            <select id="selected-phase"></select>
-          </div>
-          <div>
-            <label>Transition type</label>
-            <select id="transition-type">
-              <option value="instant">instant</option>
-              <option value="linear">linear</option>
-              <option value="ease">ease</option>
-            </select>
-          </div>
-          <div>
-            <label>Transition duration (s)</label>
-            <input id="transition-duration" type="number" min="0" step="0.1" />
-          </div>
-          <div>
-            <label>Adaptive?</label>
-            <select id="transition-adaptive">
-              <option value="true">true</option>
-              <option value="false">false</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="mt-2">
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th style="width: 22%;">Target type</th>
-                  <th style="width: 18%;">Operator</th>
-                  <th style="width: 18%;">Value</th>
-                  <th style="width: 10%;"></th>
-                </tr>
-              </thead>
-              <tbody id="targets-body">
-                <!-- Filled by JS -->
-              </tbody>
-            </table>
-          </div>
-          <div class="btn-row mt-2">
-            <button id="add-target" class="btn btn-sm">+ Add target</button>
-            <span class="small">
-              Example: type <code>volumetric</code>, operator <code>gte</code>, value
-              <code>30</code> → stop when cup weight/volume ≥ 30.
-            </span>
-          </div>
+        <div class="field-small">
+          <label for="profile-utility">Utility?</label>
+          <select id="profile-utility">
+            <option value="false">No (brew profile)</option>
+            <option value="true">Yes (utility)</option>
+          </select>
         </div>
       </div>
 
-      <!-- RIGHT: Chart + JSON -->
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
-          <div>
-            <h2>Brew Curve Preview</h2>
-            <p class="small">
-              Pressure, flow, and temperature over time, derived from each phase’s settings.
-            </p>
-          </div>
-          <span class="chip">Read-only simulation</span>
-        </div>
-
-        <div class="chart-wrapper mt-2">
-          <canvas id="profile-chart"></canvas>
-        </div>
-
-        <h2 class="mt-3">Profile JSON</h2>
-        <p class="small">
-          This is what will be exported. It matches a GaggiMate <code>pro</code> profile:
-          <code>id</code>, <code>selected</code>, and <code>favorite</code> are intentionally
-          omitted.
-        </p>
-        <textarea id="json-preview" readonly></textarea>
-
-        <div class="btn-row mt-2">
-          <button id="download-json" class="btn btn-primary">⬇ Download JSON</button>
-          <button id="copy-json" class="btn">📋 Copy JSON</button>
-        </div>
+      <div class="mt-2">
+        <label for="profile-description">Description</label>
+        <input
+          id="profile-description"
+          type="text"
+          placeholder="Notes about bean, ratio, etc."
+        />
       </div>
-    </div>
-  </div>
+
+      <div class="mt-3">
+        <span class="pill">
+          <span class="pill-dot"></span>
+          Pro profile JSON (flow / pressure / weight)
+        </span>
+      </div>
+    </section>
+
+    <!-- Phases -->
+    <section class="card">
+      <h2>Phases</h2>
+      <p class="small">
+        Each phase has its own temperature override, pump mode, valve state, stop conditions
+        (<strong>targets</strong>), and transition. Tap a phase to expand its full settings.
+      </p>
+
+      <div id="phases-list" class="phases-list"></div>
+
+      <div class="btn-row mt-2">
+        <button id="add-phase" class="btn btn-sm">+ Add phase</button>
+        <button id="reset-profile" class="btn btn-sm btn-ghost">
+          Reset to example profile
+        </button>
+      </div>
+    </section>
+
+    <!-- Brew curve -->
+    <section class="card">
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div>
+          <h2>Brew Curve Preview</h2>
+          <p class="small">
+            Pressure, flow, and temperature over time, derived from the phase settings.
+          </p>
+        </div>
+        <span class="chip">Read-only simulation</span>
+      </div>
+
+      <div class="chart-wrapper">
+        <canvas id="profile-chart"></canvas>
+      </div>
+    </section>
+
+    <!-- JSON -->
+    <section class="card">
+      <h2 class="mt-1">Profile JSON</h2>
+      <p class="small">
+        This is the exported profile. It matches a GaggiMate <code>pro</code> profile; fields like
+        <code>id</code>, <code>selected</code>, and <code>favorite</code> are intentionally
+        omitted.
+      </p>
+
+      <textarea id="json-preview" readonly></textarea>
+
+      <div class="json-actions">
+        <button id="download-json" class="btn btn-primary">⬇ Download JSON</button>
+        <button id="copy-json" class="btn">📋 Copy JSON</button>
+      </div>
+    </section>
+  </main>
 
   <script>
-    // -------------------------- Data model ------------------------------------
-    // Default profile based on your Ethiopian flow example
-    function makeDefaultProfile() {
-      return {
-        label: "Ethiopian flow",
-        type: "pro",
-        description: "",
-        temperature: 95,
-        utility: false,
-        phases: [
-          {
-            name: "Pump",
-            phase: "preinfusion",
-            valve: 1,
-            duration: 5,
-            temperature: 96,
-            transition: {
-              type: "instant",
-              duration: 0,
-              adaptive: true,
-            },
-            pump: {
-              target: "flow",
-              pressure: 6,
-              flow: 3,
-            },
-            targets: [
-              {
-                type: "volumetric",
-                operator: "gte",
-                value: 0.2,
-              },
-            ],
-          },
-          {
-            name: "Bloom",
-            phase: "preinfusion",
-            valve: 1,
-            duration: 5,
-            temperature: 0,
-            transition: {
-              type: "instant",
-              duration: 0,
-              adaptive: true,
-            },
-            pump: 0,
-            targets: [
-              {
-                type: "volumetric",
-                operator: "gte",
-                value: 1,
-              },
-            ],
-          },
-          {
-            name: "Pump",
-            phase: "brew",
-            valve: 1,
-            duration: 35,
-            temperature: 93,
-            transition: {
-              type: "instant",
-              duration: 0,
-              adaptive: true,
-            },
-            pump: {
-              target: "flow",
-              pressure: 7,
-              flow: 3,
-            },
-            targets: [
-              {
-                type: "volumetric",
-                operator: "gte",
-                value: 30,
-              },
-            ],
-          },
-        ],
-      };
-    }
+    // DOM references
+    const labelInput = document.getElementById("profile-label");
+    const typeInput = document.getElementById("profile-type");
+    const tempInput = document.getElementById("profile-temp");
+    const descInput = document.getElementById("profile-description");
+    const utilityInput = document.getElementById("profile-utility");
+
+    const phasesList = document.getElementById("phases-list");
+    const addPhaseBtn = document.getElementById("add-phase");
+    const resetProfileBtn = document.getElementById("reset-profile");
+
+    const jsonPreview = document.getElementById("json-preview");
+    const downloadBtn = document.getElementById("download-json");
+    const copyBtn = document.getElementById("copy-json");
 
     const PhaseTypes = [
       { value: "preinfusion", label: "Preinfusion" },
@@ -607,31 +588,65 @@
       { value: "eq", label: "= (eq)" },
     ];
 
-    // Global state
     let profile = null;
     let chart = null;
-    let selectedPhaseIndex = 0;
 
-    // -------------------------- DOM refs --------------------------------------
-    const labelInput = document.getElementById("profile-label");
-    const typeInput = document.getElementById("profile-type");
-    const tempInput = document.getElementById("profile-temp");
-    const descInput = document.getElementById("profile-description");
-    const utilityInput = document.getElementById("profile-utility");
-
-    const phasesBody = document.getElementById("phases-body");
-    const selectedPhaseSelect = document.getElementById("selected-phase");
-    const transitionTypeInput = document.getElementById("transition-type");
-    const transitionDurationInput = document.getElementById("transition-duration");
-    const transitionAdaptiveInput = document.getElementById("transition-adaptive");
-    const targetsBody = document.getElementById("targets-body");
-
-    const jsonPreview = document.getElementById("json-preview");
-    const addPhaseBtn = document.getElementById("add-phase");
-    const resetProfileBtn = document.getElementById("reset-profile");
-    const addTargetBtn = document.getElementById("add-target");
-    const downloadBtn = document.getElementById("download-json");
-    const copyBtn = document.getElementById("copy-json");
+    // Example default profile (adapted from GaggiMate docs)
+    function makeDefaultProfile() {
+      return {
+        label: "Ethiopian flow",
+        type: "pro",
+        description: "",
+        temperature: 95,
+        utility: false,
+        phases: [
+          {
+            name: "Pump",
+            phase: "preinfusion",
+            valve: 1,
+            duration: 5,
+            temperature: 96,
+            transition: { type: "instant", duration: 0, adaptive: true },
+            pump: {
+              target: "flow",
+              pressure: 4,
+              flow: 2,
+            },
+            targets: [],
+          },
+          {
+            name: "Bloom",
+            phase: "preinfusion",
+            valve: 1,
+            duration: 5,
+            temperature: 0,
+            transition: { type: "instant", duration: 0, adaptive: true },
+            pump: 0,
+            targets: [
+              {
+                type: "volumetric",
+                operator: "gte",
+                value: 30,
+              },
+            ],
+          },
+          {
+            name: "Pump",
+            phase: "brew",
+            valve: 1,
+            duration: 35,
+            temperature: 93,
+            transition: { type: "instant", duration: 0, adaptive: true },
+            pump: {
+              target: "flow",
+              pressure: 7,
+              flow: 4,
+            },
+            targets: [],
+          },
+        ],
+      };
+    }
 
     // ---------------------- Pump helpers --------------------------------------
     function getPumpMode(phase) {
@@ -659,7 +674,9 @@
     function getPumpFlow(phase) {
       const p = phase.pump;
       if (typeof p === "number") return 0;
-      return p && typeof p === "object" && typeof p.flow === "number" ? p.flow : 0;
+      return p && typeof p === "object" && typeof p.flow === "number"
+        ? p.flow
+        : 0;
     }
 
     function setPump(phase, mode, pressureVal, flowVal, powerVal) {
@@ -697,29 +714,84 @@
 
     // ------------------------ Rendering: phases -------------------------------
     function renderPhases() {
-      phasesBody.innerHTML = "";
+      phasesList.innerHTML = "";
       profile.phases.forEach((phase, index) => {
-        const tr = document.createElement("tr");
-        tr.dataset.index = index;
+        const mode = getPumpMode(phase);
+        const pressure = getPumpPressure(phase);
+        const flow = getPumpFlow(phase);
+        const transition =
+          phase.transition || { type: "instant", duration: 0, adaptive: true };
 
-        const pumpMode = getPumpMode(phase);
-        const pumpPressure = getPumpPressure(phase);
-        const pumpFlow = getPumpFlow(phase);
+        const details = document.createElement("details");
+        details.className = "phase-card";
+        if (index === 0) details.open = true;
 
-        const tdName = document.createElement("td");
+        const summary = document.createElement("summary");
+        summary.className = "phase-summary";
+
+        const title = document.createElement("div");
+        title.className = "phase-title";
+        title.textContent = `Phase ${index + 1}: ${phase.name || "Untitled"}`;
+
+        const meta = document.createElement("div");
+        meta.className = "phase-meta";
+        const m1 = document.createElement("span");
+        m1.textContent =
+          PhaseTypes.find((t) => t.value === phase.phase)?.label ||
+          phase.phase ||
+          "Brew";
+        const m2 = document.createElement("span");
+        m2.textContent = `${Number(phase.duration || 0).toFixed(1)} s`;
+        const m3 = document.createElement("span");
+        m3.textContent = `Pump: ${mode}`;
+        meta.appendChild(m1);
+        meta.appendChild(m2);
+        meta.appendChild(m3);
+
+        const chevron = document.createElement("span");
+        chevron.className = "phase-chevron";
+        chevron.textContent = "›";
+
+        summary.appendChild(title);
+        summary.appendChild(meta);
+        summary.appendChild(chevron);
+
+        const body = document.createElement("div");
+        body.className = "phase-body";
+
+        // --- Basic settings ---
+        const basicSection = document.createElement("div");
+        basicSection.className = "phase-section";
+        const basicTitle = document.createElement("div");
+        basicTitle.className = "phase-section-title";
+        basicTitle.textContent = "Basics";
+        basicSection.appendChild(basicTitle);
+
+        const basicRow = document.createElement("div");
+        basicRow.className = "field-row";
+
+        // Name
+        const nameDiv = document.createElement("div");
+        const nameLabel = document.createElement("label");
+        nameLabel.textContent = "Name";
         const nameInput = document.createElement("input");
         nameInput.type = "text";
         nameInput.value = phase.name || "";
         nameInput.addEventListener("input", () => {
           phase.name = nameInput.value;
-          renderPhaseSelector();
+          renderPhases();
           updateJsonAndChart();
         });
-        tdName.appendChild(nameInput);
+        nameDiv.appendChild(nameLabel);
+        nameDiv.appendChild(nameInput);
+        basicRow.appendChild(nameDiv);
 
-        const tdType = document.createElement("td");
+        // Type
+        const typeDiv = document.createElement("div");
+        const typeLabel = document.createElement("label");
+        typeLabel.textContent = "Type";
         const typeSelect = document.createElement("select");
-        PhaseTypes.forEach(t => {
+        PhaseTypes.forEach((t) => {
           const opt = document.createElement("option");
           opt.value = t.value;
           opt.textContent = t.label;
@@ -729,10 +801,17 @@
         typeSelect.addEventListener("change", () => {
           phase.phase = typeSelect.value;
           updateJsonAndChart();
+          renderPhases();
         });
-        tdType.appendChild(typeSelect);
+        typeDiv.appendChild(typeLabel);
+        typeDiv.appendChild(typeSelect);
+        basicRow.appendChild(typeDiv);
 
-        const tdDur = document.createElement("td");
+        // Duration
+        const durDiv = document.createElement("div");
+        durDiv.className = "field-small";
+        const durLabel = document.createElement("label");
+        durLabel.textContent = "Dur (s)";
         const durInput = document.createElement("input");
         durInput.type = "number";
         durInput.min = "0";
@@ -742,22 +821,36 @@
           const v = parseFloat(durInput.value);
           phase.duration = isNaN(v) ? 0 : v;
           updateJsonAndChart();
+          renderPhases();
         });
-        tdDur.appendChild(durInput);
+        durDiv.appendChild(durLabel);
+        durDiv.appendChild(durInput);
+        basicRow.appendChild(durDiv);
 
-        const tdTemp = document.createElement("td");
-        const tempOverride = document.createElement("input");
-        tempOverride.type = "number";
-        tempOverride.step = "0.1";
-        tempOverride.value = phase.temperature ?? 0;
-        tempOverride.addEventListener("input", () => {
-          const v = parseFloat(tempOverride.value);
+        // Temp override
+        const tempDiv = document.createElement("div");
+        tempDiv.className = "field-small";
+        const tempLabel = document.createElement("label");
+        tempLabel.textContent = "Temp (°C)";
+        const tempInputPhase = document.createElement("input");
+        tempInputPhase.type = "number";
+        tempInputPhase.min = "0";
+        tempInputPhase.step = "0.1";
+        tempInputPhase.value = phase.temperature ?? 0;
+        tempInputPhase.addEventListener("input", () => {
+          const v = parseFloat(tempInputPhase.value);
           phase.temperature = isNaN(v) ? 0 : v;
           updateJsonAndChart();
         });
-        tdTemp.appendChild(tempOverride);
+        tempDiv.appendChild(tempLabel);
+        tempDiv.appendChild(tempInputPhase);
+        basicRow.appendChild(tempDiv);
 
-        const tdValve = document.createElement("td");
+        // Valve
+        const valveDiv = document.createElement("div");
+        valveDiv.className = "field-small";
+        const valveLabel = document.createElement("label");
+        valveLabel.textContent = "Valve";
         const valveSelect = document.createElement("select");
         const openOpt = document.createElement("option");
         openOpt.value = "1";
@@ -772,194 +865,304 @@
           phase.valve = parseInt(valveSelect.value, 10) || 0;
           updateJsonAndChart();
         });
-        tdValve.appendChild(valveSelect);
+        valveDiv.appendChild(valveLabel);
+        valveDiv.appendChild(valveSelect);
+        basicRow.appendChild(valveDiv);
 
-        const tdPumpMode = document.createElement("td");
+        basicSection.appendChild(basicRow);
+        body.appendChild(basicSection);
+
+        // --- Pump settings ---
+        const pumpSection = document.createElement("div");
+        pumpSection.className = "phase-section";
+        const pumpTitle = document.createElement("div");
+        pumpTitle.className = "phase-section-title";
+        pumpTitle.textContent = "Pump";
+        pumpSection.appendChild(pumpTitle);
+
+        const pumpRow = document.createElement("div");
+        pumpRow.className = "field-row";
+
+        const modeDiv = document.createElement("div");
+        modeDiv.className = "field-small";
+        const modeLabel = document.createElement("label");
+        modeLabel.textContent = "Mode";
         const pumpModeSelect = document.createElement("select");
         [
           { value: "off", label: "Off" },
-          { value: "flow", label: "Flow" },
-          { value: "pressure", label: "Pressure" },
-          { value: "power", label: "Power" },
-        ].forEach(optData => {
+          { value: "power", label: "Power (0-255)" },
+          { value: "flow", label: "Flow target" },
+          { value: "pressure", label: "Pressure target" },
+        ].forEach((optCfg) => {
           const opt = document.createElement("option");
-          opt.value = optData.value;
-          opt.textContent = optData.label;
-          if (optData.value === pumpMode) opt.selected = true;
+          opt.value = optCfg.value;
+          opt.textContent = optCfg.label;
+          if (mode === optCfg.value) opt.selected = true;
           pumpModeSelect.appendChild(opt);
         });
-        tdPumpMode.appendChild(pumpModeSelect);
+        modeDiv.appendChild(modeLabel);
+        modeDiv.appendChild(pumpModeSelect);
+        pumpRow.appendChild(modeDiv);
 
-        const tdPressure = document.createElement("td");
+        const pressureDiv = document.createElement("div");
+        pressureDiv.className = "field-small";
+        const pressureLabel = document.createElement("label");
+        pressureLabel.textContent = "Pressure (bar / power)";
         const pressureInput = document.createElement("input");
         pressureInput.type = "number";
         pressureInput.step = "0.1";
-        pressureInput.value = pumpPressure;
-        tdPressure.appendChild(pressureInput);
+        pressureInput.value =
+          mode === "power" && typeof phase.pump === "number"
+            ? phase.pump
+            : pressure;
+        pressureDiv.appendChild(pressureLabel);
+        pressureDiv.appendChild(pressureInput);
+        pumpRow.appendChild(pressureDiv);
 
-        const tdFlow = document.createElement("td");
+        const flowDiv = document.createElement("div");
+        flowDiv.className = "field-small";
+        const flowLabel = document.createElement("label");
+        flowLabel.textContent = "Flow (ml/s)";
         const flowInput = document.createElement("input");
         flowInput.type = "number";
         flowInput.step = "0.1";
-        flowInput.value = pumpFlow;
-        tdFlow.appendChild(flowInput);
+        flowInput.value = flow;
+        flowDiv.appendChild(flowLabel);
+        flowDiv.appendChild(flowInput);
+        pumpRow.appendChild(flowDiv);
 
-        const tdDelete = document.createElement("td");
-        tdDelete.className = "text-right";
-        const delBtn = document.createElement("button");
-        delBtn.type = "button";
-        delBtn.textContent = "✕";
-        delBtn.className = "btn btn-sm btn-danger";
-        delBtn.title = "Delete phase";
-        delBtn.addEventListener("click", () => {
-          profile.phases.splice(index, 1);
-          if (selectedPhaseIndex >= profile.phases.length) {
-            selectedPhaseIndex = profile.phases.length - 1;
-          }
-          if (selectedPhaseIndex < 0) selectedPhaseIndex = 0;
-          renderPhases();
-          renderPhaseSelector();
-          renderSelectedPhaseDetails();
-          updateJsonAndChart();
-        });
-        tdDelete.appendChild(delBtn);
+        pumpSection.appendChild(pumpRow);
+        body.appendChild(pumpSection);
 
-        // Pump listeners (mode / pressure / flow all update together)
         const syncPump = () => {
-          const mode = pumpModeSelect.value;
+          const modeVal = pumpModeSelect.value;
           const pVal = parseFloat(pressureInput.value);
           const fVal = parseFloat(flowInput.value);
-          // For "power" we re-use pressure input as pseudo pump power (0–255) for now
-          const powerVal = parseFloat(pressureInput.value);
-          setPump(phase, mode, pVal, fVal, powerVal);
+          const powerVal = parseFloat(pressureInput.value); // reused
+          setPump(phase, modeVal, pVal, fVal, powerVal);
           updateJsonAndChart();
+          renderPhases(); // refresh meta labels
         };
         pumpModeSelect.addEventListener("change", syncPump);
         pressureInput.addEventListener("input", syncPump);
         flowInput.addEventListener("input", syncPump);
 
-        tr.appendChild(tdName);
-        tr.appendChild(tdType);
-        tr.appendChild(tdDur);
-        tr.appendChild(tdTemp);
-        tr.appendChild(tdValve);
-        tr.appendChild(tdPumpMode);
-        tr.appendChild(tdPressure);
-        tr.appendChild(tdFlow);
-        tr.appendChild(tdDelete);
+        // --- Transition ---
+        const transSection = document.createElement("div");
+        transSection.className = "phase-section";
+        const transTitle = document.createElement("div");
+        transTitle.className = "phase-section-title";
+        transTitle.textContent = "Transition to next phase";
+        transSection.appendChild(transTitle);
 
-        phasesBody.appendChild(tr);
-      });
-    }
+        const transRow = document.createElement("div");
+        transRow.className = "field-row";
 
-    // ------------------ Phase selector + transition/targets -------------------
-    function renderPhaseSelector() {
-      const phases = profile.phases;
-      selectedPhaseSelect.innerHTML = "";
-      phases.forEach((p, i) => {
-        const opt = document.createElement("option");
-        opt.value = String(i);
-        opt.textContent = `${i + 1}: ${p.name || "(unnamed)"}`;
-        selectedPhaseSelect.appendChild(opt);
-      });
-      if (phases.length === 0) {
-        selectedPhaseIndex = -1;
-        return;
-      }
-      if (selectedPhaseIndex < 0 || selectedPhaseIndex >= phases.length) {
-        selectedPhaseIndex = 0;
-      }
-      selectedPhaseSelect.value = String(selectedPhaseIndex);
-    }
-
-    function renderSelectedPhaseDetails() {
-      const phases = profile.phases;
-      if (phases.length === 0 || selectedPhaseIndex < 0) {
-        targetsBody.innerHTML = "";
-        transitionTypeInput.value = "instant";
-        transitionDurationInput.value = 0;
-        transitionAdaptiveInput.value = "true";
-        return;
-      }
-      const phase = phases[selectedPhaseIndex];
-
-      // Transition
-      const t = phase.transition || { type: "instant", duration: 0, adaptive: true };
-      transitionTypeInput.value = t.type || "instant";
-      transitionDurationInput.value = t.duration ?? 0;
-      transitionAdaptiveInput.value = t.adaptive ? "true" : "false";
-
-      // Targets
-      const targets = phase.targets || [];
-      targetsBody.innerHTML = "";
-      targets.forEach((target, idx) => {
-        const tr = document.createElement("tr");
-
-        const tdType = document.createElement("td");
-        const typeSelect = document.createElement("select");
-        TargetTypes.forEach(tt => {
+        const typeDivTrans = document.createElement("div");
+        const typeLabelTrans = document.createElement("label");
+        typeLabelTrans.textContent = "Type";
+        const transTypeSelect = document.createElement("select");
+        ["instant", "linear", "ease"].forEach((t) => {
           const opt = document.createElement("option");
-          opt.value = tt.value;
-          opt.textContent = tt.label;
-          if (target.type === tt.value) opt.selected = true;
-          typeSelect.appendChild(opt);
+          opt.value = t;
+          opt.textContent = t;
+          if (transition.type === t) opt.selected = true;
+          transTypeSelect.appendChild(opt);
         });
-        typeSelect.addEventListener("change", () => {
-          target.type = typeSelect.value;
+        transTypeSelect.addEventListener("change", () => {
+          phase.transition = phase.transition || {};
+          phase.transition.type = transTypeSelect.value;
           updateJsonAndChart();
         });
-        tdType.appendChild(typeSelect);
+        typeDivTrans.appendChild(typeLabelTrans);
+        typeDivTrans.appendChild(transTypeSelect);
+        transRow.appendChild(typeDivTrans);
 
-        const tdOp = document.createElement("td");
-        const opSelect = document.createElement("select");
-        TargetOperators.forEach(op => {
+        const durDivTrans = document.createElement("div");
+        durDivTrans.className = "field-small";
+        const durLabelTrans = document.createElement("label");
+        durLabelTrans.textContent = "Duration (s)";
+        const transDurationInput = document.createElement("input");
+        transDurationInput.type = "number";
+        transDurationInput.min = "0";
+        transDurationInput.step = "0.1";
+        transDurationInput.value = transition.duration ?? 0;
+        transDurationInput.addEventListener("input", () => {
+          const v = parseFloat(transDurationInput.value);
+          phase.transition = phase.transition || {};
+          phase.transition.duration = isNaN(v) ? 0 : v;
+          updateJsonAndChart();
+        });
+        durDivTrans.appendChild(durLabelTrans);
+        durDivTrans.appendChild(transDurationInput);
+        transRow.appendChild(durDivTrans);
+
+        const adaptDiv = document.createElement("div");
+        adaptDiv.className = "field-small";
+        const adaptLabel = document.createElement("label");
+        adaptLabel.textContent = "Adaptive?";
+        const transAdaptiveSelect = document.createElement("select");
+        ["true", "false"].forEach((v) => {
           const opt = document.createElement("option");
-          opt.value = op.value;
-          opt.textContent = op.label;
-          if (target.operator === op.value) opt.selected = true;
-          opSelect.appendChild(opt);
+          opt.value = v;
+          opt.textContent = v;
+          if ((transition.adaptive ? "true" : "false") === v) {
+            opt.selected = true;
+          }
+          transAdaptiveSelect.appendChild(opt);
         });
-        opSelect.addEventListener("change", () => {
-          target.operator = opSelect.value;
+        transAdaptiveSelect.addEventListener("change", () => {
+          phase.transition = phase.transition || {};
+          phase.transition.adaptive = transAdaptiveSelect.value === "true";
           updateJsonAndChart();
         });
-        tdOp.appendChild(opSelect);
+        adaptDiv.appendChild(adaptLabel);
+        adaptDiv.appendChild(transAdaptiveSelect);
+        transRow.appendChild(adaptDiv);
 
-        const tdVal = document.createElement("td");
-        const valInput = document.createElement("input");
-        valInput.type = "number";
-        valInput.step = "0.1";
-        valInput.value = target.value ?? 0;
-        valInput.addEventListener("input", () => {
-          const v = parseFloat(valInput.value);
-          target.value = isNaN(v) ? 0 : v;
+        transSection.appendChild(transRow);
+        body.appendChild(transSection);
+
+        // --- Targets ---
+        const targetsSection = document.createElement("div");
+        targetsSection.className = "phase-section";
+        const targetsTitle = document.createElement("div");
+        targetsTitle.className = "phase-section-title";
+        targetsTitle.textContent = "Stop targets";
+        targetsSection.appendChild(targetsTitle);
+
+        const table = document.createElement("table");
+        table.className = "targets-table";
+        const thead = document.createElement("thead");
+        thead.innerHTML =
+          "<tr><th>Type</th><th>Operator</th><th>Value</th><th></th></tr>";
+        const tbody = document.createElement("tbody");
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        targetsSection.appendChild(table);
+
+        function renderTargetsForPhase() {
+          const targets = phase.targets || [];
+          tbody.innerHTML = "";
+          targets.forEach((target, tIndex) => {
+            const tr = document.createElement("tr");
+
+            const tdType = document.createElement("td");
+            const typeSelect = document.createElement("select");
+            TargetTypes.forEach((tt) => {
+              const opt = document.createElement("option");
+              opt.value = tt.value;
+              opt.textContent = tt.label;
+              if (target.type === tt.value) opt.selected = true;
+              typeSelect.appendChild(opt);
+            });
+            typeSelect.addEventListener("change", () => {
+              target.type = typeSelect.value;
+              updateJsonAndChart();
+            });
+            tdType.appendChild(typeSelect);
+            tr.appendChild(tdType);
+
+            const tdOp = document.createElement("td");
+            const opSelect = document.createElement("select");
+            TargetOperators.forEach((op) => {
+              const opt = document.createElement("option");
+              opt.value = op.value;
+              opt.textContent = op.label;
+              if (target.operator === op.value) opt.selected = true;
+              opSelect.appendChild(opt);
+            });
+            opSelect.addEventListener("change", () => {
+              target.operator = opSelect.value;
+              updateJsonAndChart();
+            });
+            tdOp.appendChild(opSelect);
+            tr.appendChild(tdOp);
+
+            const tdVal = document.createElement("td");
+            const valInput = document.createElement("input");
+            valInput.type = "number";
+            valInput.step = "0.1";
+            valInput.value =
+              typeof target.value === "number" ? target.value : 0;
+            valInput.addEventListener("input", () => {
+              const v = parseFloat(valInput.value);
+              target.value = isNaN(v) ? 0 : v;
+              updateJsonAndChart();
+            });
+            tdVal.appendChild(valInput);
+            tr.appendChild(tdVal);
+
+            const tdDel = document.createElement("td");
+            const delBtn = document.createElement("button");
+            delBtn.className = "btn btn-sm btn-danger";
+            delBtn.type = "button";
+            delBtn.textContent = "✕";
+            delBtn.addEventListener("click", () => {
+              phase.targets.splice(tIndex, 1);
+              renderTargetsForPhase();
+              updateJsonAndChart();
+            });
+            tdDel.appendChild(delBtn);
+            tr.appendChild(tdDel);
+
+            tbody.appendChild(tr);
+          });
+        }
+
+        renderTargetsForPhase();
+
+        const targetsFooter = document.createElement("div");
+        targetsFooter.className = "targets-buttons";
+
+        const helpText = document.createElement("div");
+        helpText.className = "targets-help";
+        helpText.textContent =
+          "Example: volumetric ≥ 30 → stop when cup weight/volume ≥ 30.";
+
+        const addTargetBtn = document.createElement("button");
+        addTargetBtn.className = "btn btn-sm";
+        addTargetBtn.type = "button";
+        addTargetBtn.textContent = "+ Add target";
+        addTargetBtn.addEventListener("click", () => {
+          phase.targets = phase.targets || [];
+          phase.targets.push({
+            type: "volumetric",
+            operator: "gte",
+            value: 30,
+          });
+          renderTargetsForPhase();
           updateJsonAndChart();
         });
-        tdVal.appendChild(valInput);
 
-        const tdDel = document.createElement("td");
-        tdDel.className = "text-right";
-        const delBtn = document.createElement("button");
-        delBtn.type = "button";
-        delBtn.textContent = "✕";
-        delBtn.className = "btn btn-sm btn-danger";
-        delBtn.addEventListener("click", () => {
-          targets.splice(idx, 1);
-          phase.targets = targets;
-          renderSelectedPhaseDetails();
+        targetsFooter.appendChild(helpText);
+        targetsFooter.appendChild(addTargetBtn);
+        targetsSection.appendChild(targetsFooter);
+
+        body.appendChild(targetsSection);
+
+        // Delete phase button
+        const deleteRow = document.createElement("div");
+        deleteRow.className = "btn-row";
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "btn btn-sm btn-danger";
+        deleteBtn.type = "button";
+        deleteBtn.textContent = "Delete phase";
+        deleteBtn.addEventListener("click", () => {
+          profile.phases.splice(index, 1);
+          renderPhases();
           updateJsonAndChart();
         });
-        tdDel.appendChild(delBtn);
+        deleteRow.appendChild(deleteBtn);
+        body.appendChild(deleteRow);
 
-        tr.appendChild(tdType);
-        tr.appendChild(tdOp);
-        tr.appendChild(tdVal);
-        tr.appendChild(tdDel);
-        targetsBody.appendChild(tr);
+        details.appendChild(summary);
+        details.appendChild(body);
+        phasesList.appendChild(details);
       });
     }
 
-    // ---------------------- JSON export & preview -----------------------------
+    // --------------------------- JSON & chart ---------------------------------
     function buildExportJson() {
       const exportProfile = JSON.parse(JSON.stringify(profile));
       delete exportProfile.id;
@@ -973,27 +1176,25 @@
       jsonPreview.value = JSON.stringify(exportProfile, null, 2);
     }
 
-    // ----------------------------- Chart --------------------------------------
     function updateChart() {
-      const ctx = document.getElementById("profile-chart").getContext("2d");
+      const canvas = document.getElementById("profile-chart");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
 
-      // Total shot time
       let totalTime = 0;
-      profile.phases.forEach(p => {
+      profile.phases.forEach((p) => {
         totalTime += Number(p.duration) || 0;
       });
 
-      const timeStep = 1; // sample every 1 second
+      const timeStep = 1;
       const labels = [];
       const pressureData = [];
       const flowData = [];
       const tempData = [];
 
       for (let t = 0; t <= totalTime; t += timeStep) {
-        // Labels every 5 seconds for readability
         labels.push(t % 5 === 0 ? t : "");
 
-        // Find active phase at time t
         let elapsed = 0;
         let phase = profile.phases[0];
         for (let i = 0; i < profile.phases.length; i++) {
@@ -1054,9 +1255,17 @@
               legend: {
                 labels: {
                   color: "#e5e7eb",
-                  font: { size: 11 },
+                  font: { size: 10 },
                 },
               },
+              tooltip: {
+                mode: "index",
+                intersect: false,
+              },
+            },
+            interaction: {
+              mode: "index",
+              intersect: false,
             },
             scales: {
               x: {
@@ -1065,7 +1274,7 @@
                   text: "Time (s)",
                   color: "#9ca3af",
                 },
-                ticks: { color: "#9ca3af", autoSkip: false },
+                ticks: { color: "#9ca3af" },
                 grid: { color: "#111827" },
               },
               y1: {
@@ -1119,9 +1328,14 @@
       updateChart();
     }
 
-    // ---------------------------- Events: profile -----------------------------
+    // ---------------------------- Event wiring --------------------------------
     labelInput.addEventListener("input", () => {
       profile.label = labelInput.value;
+      updateJsonAndChart();
+    });
+
+    typeInput.addEventListener("change", () => {
+      profile.type = typeInput.value || "pro";
       updateJsonAndChart();
     });
 
@@ -1141,7 +1355,6 @@
       updateJsonAndChart();
     });
 
-    // ---------------------------- Events: phases ------------------------------
     addPhaseBtn.addEventListener("click", () => {
       profile.phases.push({
         name: "New phase",
@@ -1149,75 +1362,21 @@
         valve: 1,
         duration: 10,
         temperature: 0,
-        transition: {
-          type: "instant",
-          duration: 0,
-          adaptive: true,
-        },
+        transition: { type: "instant", duration: 0, adaptive: true },
         pump: 0,
         targets: [],
       });
-      selectedPhaseIndex = profile.phases.length - 1;
       renderPhases();
-      renderPhaseSelector();
-      renderSelectedPhaseDetails();
       updateJsonAndChart();
     });
 
     resetProfileBtn.addEventListener("click", () => {
       profile = makeDefaultProfile();
-      selectedPhaseIndex = 0;
       renderProfileFields();
       renderPhases();
-      renderPhaseSelector();
-      renderSelectedPhaseDetails();
       updateJsonAndChart();
     });
 
-    selectedPhaseSelect.addEventListener("change", () => {
-      selectedPhaseIndex = parseInt(selectedPhaseSelect.value, 10) || 0;
-      renderSelectedPhaseDetails();
-    });
-
-    transitionTypeInput.addEventListener("change", () => {
-      if (selectedPhaseIndex < 0) return;
-      const phase = profile.phases[selectedPhaseIndex];
-      phase.transition = phase.transition || {};
-      phase.transition.type = transitionTypeInput.value;
-      updateJsonAndChart();
-    });
-
-    transitionDurationInput.addEventListener("input", () => {
-      if (selectedPhaseIndex < 0) return;
-      const phase = profile.phases[selectedPhaseIndex];
-      const v = parseFloat(transitionDurationInput.value);
-      phase.transition = phase.transition || {};
-      phase.transition.duration = isNaN(v) ? 0 : v;
-      updateJsonAndChart();
-    });
-
-    transitionAdaptiveInput.addEventListener("change", () => {
-      if (selectedPhaseIndex < 0) return;
-      const phase = profile.phases[selectedPhaseIndex];
-      phase.transition = phase.transition || {};
-      phase.transition.adaptive = transitionAdaptiveInput.value === "true";
-      updateJsonAndChart();
-    });
-
-    addTargetBtn.addEventListener("click", () => {
-      if (selectedPhaseIndex < 0) return;
-      const phase = profile.phases[selectedPhaseIndex];
-      phase.targets = phase.targets || [];
-      phase.targets.push({
-        type: "volumetric",
-        operator: "gte",
-        value: 0,
-      });
-      renderSelectedPhaseDetails();
-      updateJsonAndChart();
-    });
-
-    // ---------------------- Events: JSON export -------------------------------
     downloadBtn.addEventListener("click", () => {
       const exportProfile = buildExportJson();
       const jsonStr = JSON.stringify(exportProfile, null, 2);
@@ -1241,26 +1400,22 @@
         copyBtn.textContent = "✅ Copied!";
         setTimeout(() => {
           copyBtn.textContent = "📋 Copy JSON";
-        }, 1200);
+        }, 1600);
       } catch (e) {
-        alert("Could not copy to clipboard in this browser.");
+        copyBtn.textContent = "❌ Error";
+        setTimeout(() => {
+          copyBtn.textContent = "📋 Copy JSON";
+        }, 1600);
       }
     });
 
     // ------------------------------- Init -------------------------------------
-    function init() {
+    window.addEventListener("DOMContentLoaded", () => {
       profile = makeDefaultProfile();
-      selectedPhaseIndex = 0;
       renderProfileFields();
       renderPhases();
-      renderPhaseSelector();
-      renderSelectedPhaseDetails();
       updateJsonAndChart();
-    }
-
-    window.addEventListener("DOMContentLoaded", init);
+    });
   </script>
 </body>
 </html>
-
-
