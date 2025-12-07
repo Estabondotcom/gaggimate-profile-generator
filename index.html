@@ -576,16 +576,11 @@
     ];
 
     const TargetTypes = [
-      { value: "volumetric", label: "volumetric (weight/volume)" },
+      // value stays "volumetric" for compatibility; label is "weight" in UI
+      { value: "volumetric", label: "weight" },
       { value: "time", label: "time (seconds)" },
       { value: "pressure", label: "pressure" },
       { value: "flow", label: "flow" },
-    ];
-
-    const TargetOperators = [
-      { value: "gte", label: "≥ (gte)" },
-      { value: "lte", label: "≤ (lte)" },
-      { value: "eq", label: "= (eq)" },
     ];
 
     let profile = null;
@@ -1034,8 +1029,7 @@
         const table = document.createElement("table");
         table.className = "targets-table";
         const thead = document.createElement("thead");
-        thead.innerHTML =
-          "<tr><th>Type</th><th>Operator</th><th>Value</th><th></th></tr>";
+        thead.innerHTML = "<tr><th>Type</th><th>Value</th><th></th></tr>";
         const tbody = document.createElement("tbody");
         table.appendChild(thead);
         table.appendChild(tbody);
@@ -1045,8 +1039,12 @@
           const targets = phase.targets || [];
           tbody.innerHTML = "";
           targets.forEach((target, tIndex) => {
+            // Always enforce gte operator in JSON
+            target.operator = "gte";
+
             const tr = document.createElement("tr");
 
+            // Type
             const tdType = document.createElement("td");
             const typeSelect = document.createElement("select");
             TargetTypes.forEach((tt) => {
@@ -1058,27 +1056,13 @@
             });
             typeSelect.addEventListener("change", () => {
               target.type = typeSelect.value;
+              target.operator = "gte";
               updateJsonAndChart();
             });
             tdType.appendChild(typeSelect);
             tr.appendChild(tdType);
 
-            const tdOp = document.createElement("td");
-            const opSelect = document.createElement("select");
-            TargetOperators.forEach((op) => {
-              const opt = document.createElement("option");
-              opt.value = op.value;
-              opt.textContent = op.label;
-              if (target.operator === op.value) opt.selected = true;
-              opSelect.appendChild(opt);
-            });
-            opSelect.addEventListener("change", () => {
-              target.operator = opSelect.value;
-              updateJsonAndChart();
-            });
-            tdOp.appendChild(opSelect);
-            tr.appendChild(tdOp);
-
+            // Value
             const tdVal = document.createElement("td");
             const valInput = document.createElement("input");
             valInput.type = "number";
@@ -1088,11 +1072,13 @@
             valInput.addEventListener("input", () => {
               const v = parseFloat(valInput.value);
               target.value = isNaN(v) ? 0 : v;
+              target.operator = "gte";
               updateJsonAndChart();
             });
             tdVal.appendChild(valInput);
             tr.appendChild(tdVal);
 
+            // Delete button
             const tdDel = document.createElement("td");
             const delBtn = document.createElement("button");
             delBtn.className = "btn btn-sm btn-danger";
@@ -1118,7 +1104,7 @@
         const helpText = document.createElement("div");
         helpText.className = "targets-help";
         helpText.textContent =
-          "Example: volumetric ≥ 30 → stop when cup weight/volume ≥ 30.";
+          "Example: weight ≥ 30 → stop when cup weight ≥ 30 g.";
 
         const addTargetBtn = document.createElement("button");
         addTargetBtn.className = "btn btn-sm";
@@ -1127,7 +1113,7 @@
         addTargetBtn.addEventListener("click", () => {
           phase.targets = phase.targets || [];
           phase.targets.push({
-            type: "volumetric",
+            type: "volumetric", // shown as "weight" in UI
             operator: "gte",
             value: 30,
           });
