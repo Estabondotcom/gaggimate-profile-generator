@@ -326,52 +326,93 @@
       padding: 0.5rem 0.55rem 0.55rem;
     }
 
-    /* Targets table */
+    /* ---- Stop-when targets UI ---- */
 
-    .targets-table {
-      width: 100%;
-      border-collapse: collapse;
+    .targets-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .targets-header-row .phase-section-title {
+      margin-bottom: 0;
+    }
+
+    .targets-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .target-row {
+      border-radius: 0.6rem;
+      border: 1px solid #111827;
+      padding: 0.4rem 0.55rem 0.5rem;
+      background: #020617;
+    }
+
+    .target-row-header {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .target-row-header label {
+      margin-bottom: 0;
+      font-size: 0.72rem;
+    }
+
+    .target-row-header select {
+      flex: 1;
       font-size: 0.82rem;
+      padding: 0.3rem 0.45rem;
     }
 
-    .targets-table th,
-    .targets-table td {
-      padding: 0.25rem 0.3rem;
-      text-align: left;
+    .target-row-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
     }
 
-    .targets-table th {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+    .target-value-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .target-unit {
+      font-size: 0.8rem;
       color: var(--text-muted);
-      border-bottom: 1px solid #111827;
-    }
-
-    .targets-table td:last-child {
-      width: 1%;
       white-space: nowrap;
     }
 
-    .targets-table input,
-    .targets-table select {
-      font-size: 0.8rem;
-      padding: 0.32rem 0.45rem;
+    .target-or {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin: 0.15rem 0;
+    }
+
+    .target-or-line {
+      flex: 1;
+      height: 1px;
+      background: #111827;
+    }
+
+    .target-or-text {
+      letter-spacing: 0.08em;
     }
 
     .targets-help {
       font-size: 0.75rem;
       color: var(--text-muted);
-      margin-top: 0.35rem;
-    }
-
-    .targets-buttons {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 0.3rem;
-      gap: 0.4rem;
-      flex-wrap: wrap;
+      margin-top: 0.1rem;
     }
 
     .json-actions {
@@ -482,7 +523,7 @@
       <h2>Phases</h2>
       <p class="small">
         Each phase has its own temperature override, pump mode, valve state, stop conditions
-        (<strong>targets</strong>), and transition. Tap a phase to expand its full settings.
+        (<strong>Stop when…</strong>), and transition. Tap a phase to expand its full settings.
       </p>
 
       <div id="phases-list" class="phases-list"></div>
@@ -568,7 +609,8 @@
             {
               type: "volumetric",
               operator: "gte",
-              value: 36
+              value: 36,
+              _displayKey: "weight"
             }
           ]
         }
@@ -603,13 +645,67 @@
       { value: "other", label: "Other" },
     ];
 
-    const TargetTypes = [
-      // value stays "volumetric" for compatibility; label is "weight" in UI
-      { value: "volumetric", label: "weight" },
-      { value: "time", label: "time (seconds)" },
-      { value: "pressure", label: "pressure" },
-      { value: "flow", label: "flow" },
+    // Display modes for the "Stop when" UI
+    const TargetDisplayModes = [
+      {
+        key: "water",
+        label: "Water drawn",
+        type: "volumetric",
+        operator: "gte",
+        unit: "ml",
+      },
+      {
+        key: "weight",
+        label: "Weight reached",
+        type: "volumetric",
+        operator: "gte",
+        unit: "g",
+      },
+      {
+        key: "pressureAbove",
+        label: "Pressure above",
+        type: "pressure",
+        operator: "gte",
+        unit: "bar",
+      },
+      {
+        key: "pressureBelow",
+        label: "Pressure below",
+        type: "pressure",
+        operator: "lte",
+        unit: "bar",
+      },
+      {
+        key: "flowAbove",
+        label: "Flow above",
+        type: "flow",
+        operator: "gte",
+        unit: "ml/s",
+      },
+      {
+        key: "flowBelow",
+        label: "Flow below",
+        type: "flow",
+        operator: "lte",
+        unit: "ml/s",
+      },
     ];
+
+    function findModeForTarget(target) {
+      if (!target) return TargetDisplayModes[1]; // default to weight
+
+      if (target._displayKey) {
+        const byKey = TargetDisplayModes.find(
+          (m) => m.key === target._displayKey
+        );
+        if (byKey) return byKey;
+      }
+
+      const byTypeOp = TargetDisplayModes.find(
+        (m) => m.type === target.type && m.operator === target.operator
+      );
+      return byTypeOp || TargetDisplayModes[1];
+    }
 
     let profile = null;
     let chart = null;
@@ -999,68 +1095,75 @@
         transSection.appendChild(transRow);
         body.appendChild(transSection);
 
-        // --- Targets ---
+        // --- Stop when (targets) ---
         const targetsSection = document.createElement("div");
         targetsSection.className = "phase-section";
+
+        const headerRow = document.createElement("div");
+        headerRow.className = "targets-header-row";
+
         const targetsTitle = document.createElement("div");
         targetsTitle.className = "phase-section-title";
-        targetsTitle.textContent = "Stop targets";
-        targetsSection.appendChild(targetsTitle);
+        targetsTitle.textContent = "Stop when";
+        headerRow.appendChild(targetsTitle);
 
-        const table = document.createElement("table");
-        table.className = "targets-table";
-        const thead = document.createElement("thead");
-        thead.innerHTML = "<tr><th>Type</th><th>Value</th><th></th></tr>";
-        const tbody = document.createElement("tbody");
-        table.appendChild(thead);
-        table.appendChild(tbody);
-        targetsSection.appendChild(table);
+        const addTargetBtn = document.createElement("button");
+        addTargetBtn.className = "btn btn-sm";
+        addTargetBtn.type = "button";
+        addTargetBtn.textContent = "+";
+        headerRow.appendChild(addTargetBtn);
+
+        targetsSection.appendChild(headerRow);
+
+        const targetsContainer = document.createElement("div");
+        targetsContainer.className = "targets-container";
+        targetsSection.appendChild(targetsContainer);
+
+        const helpText = document.createElement("div");
+        helpText.className = "targets-help";
+        helpText.textContent =
+          "All conditions are combined with OR: the phase stops when any is met.";
+        targetsSection.appendChild(helpText);
 
         function renderTargetsForPhase() {
           const targets = phase.targets || [];
-          tbody.innerHTML = "";
+          targetsContainer.innerHTML = "";
+
+          if (!targets.length) {
+            const empty = document.createElement("div");
+            empty.className = "targets-help";
+            empty.textContent =
+              "No stop targets. Phase will stop only when its duration ends.";
+            targetsContainer.appendChild(empty);
+            return;
+          }
+
           targets.forEach((target, tIndex) => {
-            // Always enforce gte operator in JSON
-            target.operator = "gte";
+            const modeForTarget = findModeForTarget(target);
+            target.type = modeForTarget.type;
+            target.operator = modeForTarget.operator;
+            target._displayKey = modeForTarget.key;
 
-            const tr = document.createElement("tr");
+            const row = document.createElement("div");
+            row.className = "target-row";
 
-            // Type
-            const tdType = document.createElement("td");
-            const typeSelect = document.createElement("select");
-            TargetTypes.forEach((tt) => {
+            const rowHeader = document.createElement("div");
+            rowHeader.className = "target-row-header";
+
+            const condLabel = document.createElement("label");
+            condLabel.textContent = "Condition";
+            rowHeader.appendChild(condLabel);
+
+            const condSelect = document.createElement("select");
+            TargetDisplayModes.forEach((m) => {
               const opt = document.createElement("option");
-              opt.value = tt.value;
-              opt.textContent = tt.label;
-              if (target.type === tt.value) opt.selected = true;
-              typeSelect.appendChild(opt);
+              opt.value = m.key;
+              opt.textContent = m.label;
+              if (m.key === modeForTarget.key) opt.selected = true;
+              condSelect.appendChild(opt);
             });
-            typeSelect.addEventListener("change", () => {
-              target.type = typeSelect.value;
-              target.operator = "gte";
-              updateJsonAndChart();
-            });
-            tdType.appendChild(typeSelect);
-            tr.appendChild(tdType);
+            rowHeader.appendChild(condSelect);
 
-            // Value
-            const tdVal = document.createElement("td");
-            const valInput = document.createElement("input");
-            valInput.type = "number";
-            valInput.step = "0.1";
-            valInput.value =
-              typeof target.value === "number" ? target.value : 0;
-            valInput.addEventListener("input", () => {
-              const v = parseFloat(valInput.value);
-              target.value = isNaN(v) ? 0 : v;
-              target.operator = "gte";
-              updateJsonAndChart();
-            });
-            tdVal.appendChild(valInput);
-            tr.appendChild(tdVal);
-
-            // Delete button
-            const tdDel = document.createElement("td");
             const delBtn = document.createElement("button");
             delBtn.className = "btn btn-sm btn-danger";
             delBtn.type = "button";
@@ -1070,41 +1173,76 @@
               renderTargetsForPhase();
               updateJsonAndChart();
             });
-            tdDel.appendChild(delBtn);
-            tr.appendChild(tdDel);
+            rowHeader.appendChild(delBtn);
 
-            tbody.appendChild(tr);
+            row.appendChild(rowHeader);
+
+            const rowBody = document.createElement("div");
+            rowBody.className = "target-row-body";
+
+            const valueLabel = document.createElement("label");
+            valueLabel.textContent = "Value";
+            rowBody.appendChild(valueLabel);
+
+            const valueWrap = document.createElement("div");
+            valueWrap.className = "target-value-wrap";
+
+            const valInput = document.createElement("input");
+            valInput.type = "number";
+            valInput.step = "0.1";
+            valInput.value =
+              typeof target.value === "number" ? target.value : 0;
+            valInput.addEventListener("input", () => {
+              const v = parseFloat(valInput.value);
+              target.value = isNaN(v) ? 0 : v;
+              updateJsonAndChart();
+            });
+            valueWrap.appendChild(valInput);
+
+            const unitSpan = document.createElement("span");
+            unitSpan.className = "target-unit";
+            unitSpan.textContent = modeForTarget.unit;
+            valueWrap.appendChild(unitSpan);
+
+            rowBody.appendChild(valueWrap);
+            row.appendChild(rowBody);
+
+            condSelect.addEventListener("change", () => {
+              const selectedMode =
+                TargetDisplayModes.find((m) => m.key === condSelect.value) ||
+                TargetDisplayModes[1];
+              target._displayKey = selectedMode.key;
+              target.type = selectedMode.type;
+              target.operator = selectedMode.operator;
+              unitSpan.textContent = selectedMode.unit;
+              updateJsonAndChart();
+            });
+
+            targetsContainer.appendChild(row);
+
+            if (tIndex < targets.length - 1) {
+              const orDivider = document.createElement("div");
+              orDivider.className = "target-or";
+              orDivider.innerHTML =
+                '<span class="target-or-line"></span><span class="target-or-text">OR</span><span class="target-or-line"></span>';
+              targetsContainer.appendChild(orDivider);
+            }
           });
         }
 
         renderTargetsForPhase();
 
-        const targetsFooter = document.createElement("div");
-        targetsFooter.className = "targets-buttons";
-
-        const helpText = document.createElement("div");
-        helpText.className = "targets-help";
-        helpText.textContent =
-          "Example: weight ≥ 30 → stop when cup weight ≥ 30 g.";
-
-        const addTargetBtn = document.createElement("button");
-        addTargetBtn.className = "btn btn-sm";
-        addTargetBtn.type = "button";
-        addTargetBtn.textContent = "+ Add target";
         addTargetBtn.addEventListener("click", () => {
           phase.targets = phase.targets || [];
           phase.targets.push({
-            type: "volumetric", // shown as "weight" in UI
+            type: "volumetric",
             operator: "gte",
             value: 30,
+            _displayKey: "weight",
           });
           renderTargetsForPhase();
           updateJsonAndChart();
         });
-
-        targetsFooter.appendChild(helpText);
-        targetsFooter.appendChild(addTargetBtn);
-        targetsSection.appendChild(targetsFooter);
 
         body.appendChild(targetsSection);
 
@@ -1132,6 +1270,14 @@
     // --------------------------- JSON & chart ---------------------------------
     function buildExportJson() {
       const exportProfile = JSON.parse(JSON.stringify(profile));
+      // strip UI-only keys
+      if (exportProfile.phases) {
+        exportProfile.phases.forEach((p) => {
+          (p.targets || []).forEach((t) => {
+            delete t._displayKey;
+          });
+        });
+      }
       delete exportProfile.id;
       delete exportProfile.selected;
       delete exportProfile.favorite;
