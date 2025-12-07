@@ -142,18 +142,10 @@
       flex: 0 0 120px;
     }
 
-    .mt-1 {
-      margin-top: 0.25rem;
-    }
-    .mt-2 {
-      margin-top: 0.5rem;
-    }
-    .mt-3 {
-      margin-top: 0.75rem;
-    }
-    .mt-4 {
-      margin-top: 1rem;
-    }
+    .mt-1 { margin-top: 0.25rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .mt-3 { margin-top: 0.75rem; }
+    .mt-4 { margin-top: 1rem; }
 
     .btn-row {
       display: flex;
@@ -227,14 +219,16 @@
       background: var(--accent-soft);
     }
 
-    .pill-chip {
-      font-size: 0.72rem;
-      padding: 0.1rem 0.4rem;
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.15rem 0.6rem;
       border-radius: 999px;
       border: 1px solid #1f2937;
-      background: #020617;
+      background: #030712;
+      font-size: 0.72rem;
       color: var(--text-muted);
-      margin-left: auto;
     }
 
     .chart-wrapper {
@@ -380,20 +374,6 @@
       flex-wrap: wrap;
     }
 
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.15rem 0.6rem;
-      border-radius: 999px;
-      border: 1px solid #1f2937;
-      background: #030712;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-    }
-
-    /* JSON + actions */
-
     .json-actions {
       display: flex;
       flex-wrap: wrap;
@@ -448,8 +428,7 @@
     <section class="card">
       <h2>Profile</h2>
       <p class="small">
-        Basic metadata and default brew temperature. Utility profiles are for rinses, backflush,
-        etc.
+        Basic metadata and default brew temperature. Utility profiles are for rinses, backflush, etc.
       </p>
 
       <div class="field-row mt-2">
@@ -538,8 +517,7 @@
       <h2 class="mt-1">Profile JSON</h2>
       <p class="small">
         This is the exported profile. It matches a GaggiMate <code>pro</code> profile; fields like
-        <code>id</code>, <code>selected</code>, and <code>favorite</code> are intentionally
-        omitted.
+        <code>id</code>, <code>selected</code>, and <code>favorite</code> are intentionally omitted.
       </p>
 
       <textarea id="json-preview" readonly></textarea>
@@ -767,7 +745,9 @@
         nameInput.value = phase.name || "";
         nameInput.addEventListener("input", () => {
           phase.name = nameInput.value;
-          renderPhases();
+          title.textContent = `Phase ${index + 1}: ${
+            phase.name || "Untitled"
+          }`;
           updateJsonAndChart();
         });
         nameDiv.appendChild(nameLabel);
@@ -788,8 +768,11 @@
         });
         typeSelect.addEventListener("change", () => {
           phase.phase = typeSelect.value;
+          const typeLabelText =
+            PhaseTypes.find((t) => t.value === phase.phase)?.label ||
+            phase.phase;
+          m1.textContent = typeLabelText || "Brew";
           updateJsonAndChart();
-          renderPhases();
         });
         typeDiv.appendChild(typeLabel);
         typeDiv.appendChild(typeSelect);
@@ -808,8 +791,8 @@
         durInput.addEventListener("input", () => {
           const v = parseFloat(durInput.value);
           phase.duration = isNaN(v) ? 0 : v;
+          m2.textContent = `${Number(phase.duration || 0).toFixed(1)} s`;
           updateJsonAndChart();
-          renderPhases();
         });
         durDiv.appendChild(durLabel);
         durDiv.appendChild(durInput);
@@ -928,8 +911,11 @@
           const fVal = parseFloat(flowInput.value);
           const powerVal = parseFloat(pressureInput.value); // reused
           setPump(phase, modeVal, pVal, fVal, powerVal);
+
+          const newMode = getPumpMode(phase);
+          m3.textContent = `Pump: ${newMode}`;
+
           updateJsonAndChart();
-          renderPhases(); // refresh meta labels
         };
         pumpModeSelect.addEventListener("change", syncPump);
         pressureInput.addEventListener("input", syncPump);
@@ -1474,4 +1460,3 @@
   </script>
 </body>
 </html>
-
