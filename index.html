@@ -601,7 +601,11 @@
             valve: 1,
             duration: 5,
             temperature: 96,
-            transition: { type: "instant", duration: 0, adaptive: true },
+            transition: {
+              type: "instant",
+              duration: 0,
+              adaptive: true,
+            },
             pump: {
               target: "flow",
               pressure: 4,
@@ -615,13 +619,17 @@
             valve: 1,
             duration: 5,
             temperature: 0,
-            transition: { type: "instant", duration: 0, adaptive: true },
+            transition: {
+              type: "instant",
+              duration: 0,
+              adaptive: true,
+            },
             pump: 0,
             targets: [
               {
                 type: "volumetric",
                 operator: "gte",
-                value: 30,
+                value: 1,
               },
             ],
           },
@@ -631,13 +639,23 @@
             valve: 1,
             duration: 35,
             temperature: 93,
-            transition: { type: "instant", duration: 0, adaptive: true },
+            transition: {
+              type: "linear",
+              duration: 2,
+              adaptive: true,
+            },
             pump: {
               target: "flow",
               pressure: 7,
-              flow: 4,
+              flow: 3,
             },
-            targets: [],
+            targets: [
+              {
+                type: "volumetric",
+                operator: "gte",
+                value: 30,
+              },
+            ],
           },
         ],
       };
@@ -957,13 +975,15 @@
         const typeLabelTrans = document.createElement("label");
         typeLabelTrans.textContent = "Type";
         const transTypeSelect = document.createElement("select");
-        ["instant", "linear", "ease"].forEach((t) => {
-          const opt = document.createElement("option");
-          opt.value = t;
-          opt.textContent = t;
-          if (transition.type === t) opt.selected = true;
-          transTypeSelect.appendChild(opt);
-        });
+        ["instant", "linear", "ease-in", "ease-out", "ease-in-out"].forEach(
+          (t) => {
+            const opt = document.createElement("option");
+            opt.value = t;
+            opt.textContent = t;
+            if (transition.type === t) opt.selected = true;
+            transTypeSelect.appendChild(opt);
+          }
+        );
         transTypeSelect.addEventListener("change", () => {
           phase.transition = phase.transition || {};
           phase.transition.type = transTypeSelect.value;
@@ -1162,39 +1182,100 @@
       jsonPreview.value = JSON.stringify(exportProfile, null, 2);
     }
 
+    // Easing helpers for transitions
+    function easeProgress(type, r) {
+      r = Math.max(0, Math.min(1, r));
+      switch (type) {
+        case "linear":
+          return r;
+        case "ease-in":
+          return r * r; // quadratic ease-in
+        case "ease-out":
+          return 1 - (1 - r) * (1 - r); // quadratic ease-out
+        case "ease-in-out":
+          return r < 0.5
+            ? 2 * r * r
+            : 1 - 2 * (1 - r) * (1 - r); // smooth-ish
+        default:
+          return r; // treat unknown like linear
+      }
+    }
+
     function updateChart() {
       const canvas = document.getElementById("profile-chart");
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
 
+      const phases = profile.phases || [];
+      if (!phases.length) return;
+
+      // Precompute phase start times and total time
+      const phaseStartTimes = [];
       let totalTime = 0;
-      profile.phases.forEach((p) => {
+      phases.forEach((p, i) => {
+        phaseStartTimes[i] = totalTime;
         totalTime += Number(p.duration) || 0;
       });
 
-      const timeStep = 1;
+      const timeStep = 0.25; // finer step so easing curves look smooth
       const labels = [];
       const pressureData = [];
       const flowData = [];
       const tempData = [];
 
-      for (let t = 0; t <= totalTime; t += timeStep) {
-        labels.push(t % 5 === 0 ? t : "");
+      for (let t = 0; t <= totalTime + 1e-6; t += timeStep) {
+        const rounded = Math.round(t);
+        labels.push(rounded % 5 === 0 ? rounded : "");
 
-        let elapsed = 0;
-        let phase = profile.phases[0];
-        for (let i = 0; i < profile.phases.length; i++) {
-          const p = profile.phases[i];
-          const d = Number(p.duration) || 0;
-          if (t >= elapsed && t < elapsed + d) {
-            phase = p;
+        // Find current phase at time t
+        let phaseIndex = phases.length - 1;
+        let phaseStart = phaseStartTimes[phaseIndex];
+        let phaseEnd = phaseStart + (Number(phases[phaseIndex].duration) || 0);
+
+        for (let i = 0; i < phases.length; i++) {
+          const start = phaseStartTimes[i];
+          const end = start + (Number(phases[i].duration) || 0);
+          if (t >= start && t <= end + 1e-6) {
+            phaseIndex = i;
+            phaseStart = start;
+            phaseEnd = end;
             break;
           }
-          elapsed += d;
         }
 
-        const pressure = getPumpPressure(phase);
-        const flow = getPumpFlow(phase);
+        const phase = phases[phaseIndex];
+        const nextPhase =
+          phaseIndex < phases.length - 1 ? phases[phaseIndex + 1] : null;
+
+        const basePressure = getPumpPressure(phase);
+        const baseFlow = getPumpFlow(phase);
+
+        let pressure = basePressure;
+        let flow = baseFlow;
+
+        const transition =
+          phase.transition || { type: "instant", duration: 0, adaptive: true };
+        const transDuration = Number(transition.duration) || 0;
+
+        if (
+          nextPhase &&
+          transition.type &&
+          transition.type !== "instant" &&
+          transDuration > 0
+        ) {
+          const transitionStart = Math.max(phaseEnd - transDuration, phaseStart);
+          if (t >= transitionStart && t <= phaseEnd + 1e-6) {
+            const rawR = (t - transitionStart) / transDuration;
+            const easedR = easeProgress(transition.type, rawR);
+            const nextPressure = getPumpPressure(nextPhase);
+            const nextFlow = getPumpFlow(nextPhase);
+
+            pressure =
+              basePressure + (nextPressure - basePressure) * easedR;
+            flow = baseFlow + (nextFlow - baseFlow) * easedR;
+          }
+        }
+
         const effectiveTemp =
           typeof phase.temperature === "number" && phase.temperature !== 0
             ? phase.temperature
