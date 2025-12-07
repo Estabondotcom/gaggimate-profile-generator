@@ -1200,195 +1200,208 @@
           return r; // treat unknown like linear
       }
     }
+    
+  function updateChart() {
+  const canvas = document.getElementById("profile-chart");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
 
-    function updateChart() {
-      const canvas = document.getElementById("profile-chart");
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
+  const phases = profile.phases || [];
+  if (!phases.length) return;
 
-      const phases = profile.phases || [];
-      if (!phases.length) return;
+  // Precompute phase start times and total time
+  const phaseStartTimes = [];
+  let totalTime = 0;
+  phases.forEach((p, i) => {
+    phaseStartTimes[i] = totalTime;
+    totalTime += Number(p.duration) || 0;
+  });
 
-      // Precompute phase start times and total time
-      const phaseStartTimes = [];
-      let totalTime = 0;
-      phases.forEach((p, i) => {
-        phaseStartTimes[i] = totalTime;
-        totalTime += Number(p.duration) || 0;
-      });
+  const timeStep = 0.25; // finer step so easing curves look smooth
+  const labels = [];
+  const pressureData = [];
+  const flowData = [];
+  const tempData = [];
 
-      const timeStep = 0.25; // finer step so easing curves look smooth
-      const labels = [];
-      const pressureData = [];
-      const flowData = [];
-      const tempData = [];
+  for (let t = 0; t <= totalTime + 1e-6; t += timeStep) {
+    const rounded = Math.round(t);
+    labels.push(rounded % 5 === 0 ? rounded : "");
 
-      for (let t = 0; t <= totalTime + 1e-6; t += timeStep) {
-        const rounded = Math.round(t);
-        labels.push(rounded % 5 === 0 ? rounded : "");
+    // Find which phase we're in at time t
+    let phaseIndex = phases.length - 1;
+    let phaseStart = phaseStartTimes[phaseIndex];
+    let phaseEnd =
+      phaseStart + (Number(phases[phaseIndex].duration) || 0);
 
-        // Find current phase at time t
-        let phaseIndex = phases.length - 1;
-        let phaseStart = phaseStartTimes[phaseIndex];
-        let phaseEnd = phaseStart + (Number(phases[phaseIndex].duration) || 0);
-
-        for (let i = 0; i < phases.length; i++) {
-          const start = phaseStartTimes[i];
-          const end = start + (Number(phases[i].duration) || 0);
-          if (t >= start && t <= end + 1e-6) {
-            phaseIndex = i;
-            phaseStart = start;
-            phaseEnd = end;
-            break;
-          }
-        }
-
-        const phase = phases[phaseIndex];
-        const nextPhase =
-          phaseIndex < phases.length - 1 ? phases[phaseIndex + 1] : null;
-
-        const basePressure = getPumpPressure(phase);
-        const baseFlow = getPumpFlow(phase);
-
-        let pressure = basePressure;
-        let flow = baseFlow;
-
-        const transition =
-          phase.transition || { type: "instant", duration: 0, adaptive: true };
-        const transDuration = Number(transition.duration) || 0;
-
-        if (
-          nextPhase &&
-          transition.type &&
-          transition.type !== "instant" &&
-          transDuration > 0
-        ) {
-          const transitionStart = Math.max(phaseEnd - transDuration, phaseStart);
-          if (t >= transitionStart && t <= phaseEnd + 1e-6) {
-            const rawR = (t - transitionStart) / transDuration;
-            const easedR = easeProgress(transition.type, rawR);
-            const nextPressure = getPumpPressure(nextPhase);
-            const nextFlow = getPumpFlow(nextPhase);
-
-            pressure =
-              basePressure + (nextPressure - basePressure) * easedR;
-            flow = baseFlow + (nextFlow - baseFlow) * easedR;
-          }
-        }
-
-        const effectiveTemp =
-          typeof phase.temperature === "number" && phase.temperature !== 0
-            ? phase.temperature
-            : profile.temperature;
-
-        pressureData.push(pressure);
-        flowData.push(flow);
-        tempData.push(effectiveTemp);
-      }
-
-      const chartData = {
-        labels,
-        datasets: [
-          {
-            label: "Pressure (bar)",
-            data: pressureData,
-            yAxisID: "y1",
-            tension: 0,
-          },
-          {
-            label: "Flow (ml/s)",
-            data: flowData,
-            yAxisID: "y2",
-            tension: 0,
-          },
-          {
-            label: "Temperature (°C)",
-            data: tempData,
-            yAxisID: "yTemp",
-            tension: 0,
-            borderDash: [4, 3],
-          },
-        ],
-      };
-
-      if (!chart) {
-        chart = new Chart(ctx, {
-          type: "line",
-          data: chartData,
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                labels: {
-                  color: "#e5e7eb",
-                  font: { size: 10 },
-                },
-              },
-              tooltip: {
-                mode: "index",
-                intersect: false,
-              },
-            },
-            interaction: {
-              mode: "index",
-              intersect: false,
-            },
-            scales: {
-              x: {
-                title: {
-                  display: true,
-                  text: "Time (s)",
-                  color: "#9ca3af",
-                },
-                ticks: { color: "#9ca3af" },
-                grid: { color: "#111827" },
-              },
-              y1: {
-                position: "left",
-                title: {
-                  display: true,
-                  text: "Pressure (bar)",
-                  color: "#9ca3af",
-                },
-                ticks: { color: "#9ca3af" },
-                grid: { color: "#111827" },
-                suggestedMin: 0,
-                suggestedMax: 10,
-              },
-              y2: {
-                position: "right",
-                title: {
-                  display: true,
-                  text: "Flow (ml/s)",
-                  color: "#9ca3af",
-                },
-                ticks: { color: "#9ca3af" },
-                grid: { display: false },
-                suggestedMin: 0,
-                suggestedMax: 8,
-              },
-              yTemp: {
-                position: "right",
-                offset: true,
-                title: {
-                  display: true,
-                  text: "Temperature (°C)",
-                  color: "#9ca3af",
-                },
-                ticks: { color: "#9ca3af" },
-                grid: { display: false },
-                suggestedMin: 80,
-                suggestedMax: 105,
-              },
-            },
-          },
-        });
-      } else {
-        chart.data = chartData;
-        chart.update();
+    for (let i = 0; i < phases.length; i++) {
+      const start = phaseStartTimes[i];
+      const end = start + (Number(phases[i].duration) || 0);
+      if (t >= start && t <= end + 1e-6) {
+        phaseIndex = i;
+        phaseStart = start;
+        phaseEnd = end;
+        break;
       }
     }
+
+    const phase = phases[phaseIndex];
+    const basePressure = getPumpPressure(phase);
+    const baseFlow = getPumpFlow(phase);
+
+    let pressure = basePressure;
+    let flow = baseFlow;
+
+    // Transition belongs to this phase: ease from PREVIOUS phase into THIS phase
+    const transition =
+      phase.transition || { type: "instant", duration: 0, adaptive: true };
+    const transDuration = Number(transition.duration) || 0;
+
+    if (
+      phaseIndex > 0 &&
+      transition.type &&
+      transition.type !== "instant" &&
+      transDuration > 0
+    ) {
+      const rampStart = phaseStart;
+      const rampEnd = Math.min(rampStart + transDuration, phaseEnd);
+
+      if (t >= rampStart && t <= rampEnd + 1e-6) {
+        const prevPhase = phases[phaseIndex - 1];
+        const prevPressure = getPumpPressure(prevPhase);
+        const prevFlow = getPumpFlow(prevPhase);
+
+        const rawR = (t - rampStart) / (rampEnd - rampStart || 1);
+        const easedR = easeProgress(transition.type, rawR);
+
+        // interpolate from prev → current
+        pressure =
+          prevPressure + (basePressure - prevPressure) * easedR;
+        flow = prevFlow + (baseFlow - prevFlow) * easedR;
+      }
+    }
+
+    const effectiveTemp =
+      typeof phase.temperature === "number" && phase.temperature !== 0
+        ? phase.temperature
+        : profile.temperature;
+
+    pressureData.push(pressure);
+    flowData.push(flow);
+    tempData.push(effectiveTemp);
+  }
+
+  const chartData = {
+    labels,
+    datasets: [
+      {
+        label: "Pressure (bar)",
+        data: pressureData,
+        yAxisID: "y1",
+        tension: 0,
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHitRadius: 6,
+      },
+      {
+        label: "Flow (ml/s)",
+        data: flowData,
+        yAxisID: "y2",
+        tension: 0,
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHitRadius: 6,
+      },
+      {
+        label: "Temperature (°C)",
+        data: tempData,
+        yAxisID: "yTemp",
+        tension: 0,
+        borderDash: [4, 3],
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHitRadius: 6,
+      },
+    ],
+  };
+
+  if (!chart) {
+    chart = new Chart(ctx, {
+      type: "line",
+      data: chartData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: "#e5e7eb",
+              font: { size: 10 },
+            },
+          },
+          tooltip: {
+            mode: "index",
+            intersect: false,
+          },
+        },
+        interaction: {
+          mode: "index",
+          intersect: false,
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: "Time (s)",
+              color: "#9ca3af",
+            },
+            ticks: { color: "#9ca3af" },
+            grid: { color: "#111827" },
+          },
+          y1: {
+            position: "left",
+            title: {
+              display: true,
+              text: "Pressure (bar)",
+              color: "#9ca3af",
+            },
+            ticks: { color: "#9ca3af" },
+            grid: { color: "#111827" },
+            suggestedMin: 0,
+            suggestedMax: 10,
+          },
+          y2: {
+            position: "right",
+            title: {
+              display: true,
+              text: "Flow (ml/s)",
+              color: "#9ca3af",
+            },
+            ticks: { color: "#9ca3af" },
+            grid: { display: false },
+            suggestedMin: 0,
+            suggestedMax: 8,
+          },
+          yTemp: {
+            position: "right",
+            offset: true,
+            title: {
+              display: true,
+              text: "Temperature (°C)",
+              color: "#9ca3af",
+            },
+            ticks: { color: "#9ca3af" },
+            grid: { display: false },
+            suggestedMin: 80,
+            suggestedMax: 105,
+          },
+        },
+      },
+    });
+  } else {
+    chart.data = chartData;
+    chart.update();
+  }
+}
 
     function updateJsonAndChart() {
       updateJsonPreview();
@@ -1486,3 +1499,4 @@
   </script>
 </body>
 </html>
+
