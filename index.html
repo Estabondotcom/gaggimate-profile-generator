@@ -524,17 +524,24 @@
             placeholder="E.g. Ethiopian 1:2.5 flow profile"
           />
         </div>
+
         <div class="field-small">
-          <label for="profile-type">Type</label>
-          <select id="profile-type">
-            <option value="pro">pro</option>
-            <option value="basic">basic</option>
-          </select>
+          <label>Type</label>
+          <div
+            style="padding:0.45rem 0.6rem;
+                   border-radius:0.5rem;
+                   border:1px solid #374151;
+                   background:#020617;
+                   font-size:0.85rem;">
+            pro
+          </div>
         </div>
+
         <div class="field-small">
           <label for="profile-temp">Temp (°C)</label>
           <input id="profile-temp" type="number" step="0.1" />
         </div>
+
         <div class="field-small">
           <label for="profile-utility">Utility?</label>
           <select id="profile-utility">
@@ -609,7 +616,14 @@
       <div class="json-actions">
         <button id="download-json" class="btn btn-primary">⬇ Download JSON</button>
         <button id="copy-json" class="btn">📋 Copy JSON</button>
+        <button id="import-json" class="btn">⬆ Import profile</button>
       </div>
+      <input
+        id="import-file"
+        type="file"
+        accept="application/json,.json"
+        style="display:none"
+      />
     </section>
   </main>
 
@@ -666,7 +680,6 @@
 
     // DOM references
     const labelInput = document.getElementById("profile-label");
-    const typeInput = document.getElementById("profile-type");
     const tempInput = document.getElementById("profile-temp");
     const descInput = document.getElementById("profile-description");
     const utilityInput = document.getElementById("profile-utility");
@@ -678,6 +691,8 @@
     const jsonPreview = document.getElementById("json-preview");
     const downloadBtn = document.getElementById("download-json");
     const copyBtn = document.getElementById("copy-json");
+    const importBtn = document.getElementById("import-json");
+    const importFileInput = document.getElementById("import-file");
 
     // Only Preinfusion and Brew in the type dropdown
     const PhaseTypes = [
@@ -807,8 +822,9 @@
 
     // -------------------- Rendering: profile fields ---------------------------
     function renderProfileFields() {
+      // Always force type to pro
+      profile.type = "pro";
       labelInput.value = profile.label || "";
-      typeInput.value = profile.type || "pro";
       tempInput.value = profile.temperature ?? 93;
       descInput.value = profile.description || "";
       utilityInput.value = profile.utility ? "true" : "false";
@@ -1411,6 +1427,9 @@
     // --------------------------- JSON & chart ---------------------------------
     function buildExportJson() {
       const exportProfile = JSON.parse(JSON.stringify(profile));
+      // Always export as pro
+      exportProfile.type = "pro";
+
       if (exportProfile.phases) {
         exportProfile.phases.forEach((p) => {
           (p.targets || []).forEach((t) => {
@@ -1648,14 +1667,66 @@
       updateChart();
     }
 
+    // ------------------------ Import profile ----------------------------------
+    function loadProfileFromJson(data) {
+      try {
+        const base = makeDefaultProfile();
+
+        const newProfile = {
+          ...base,
+          ...data,
+        };
+
+        // Force type to pro
+        newProfile.type = "pro";
+
+        // Ensure utility is boolean
+        newProfile.utility = !!newProfile.utility;
+
+        if (Array.isArray(data.phases)) {
+          newProfile.phases = data.phases.map((p) => {
+            const mergedPhase = {
+              name: p.name || "Phase",
+              phase: p.phase || "brew",
+              valve: typeof p.valve === "number" ? p.valve : 1,
+              duration: typeof p.duration === "number" ? p.duration : 10,
+              temperature:
+                typeof p.temperature === "number" ? p.temperature : 0,
+              transition: p.transition || {
+                type: "instant",
+                duration: 0,
+                adaptive: true,
+              },
+              pump: typeof p.pump !== "undefined" ? p.pump : 0,
+              targets: Array.isArray(p.targets) ? p.targets.slice() : [],
+            };
+
+            if (Array.isArray(mergedPhase.targets)) {
+              mergedPhase.targets = mergedPhase.targets.map((t) => {
+                const copy = { ...t };
+                const mode = findModeForTarget(copy);
+                copy._displayKey = mode.key;
+                return copy;
+              });
+            }
+
+            return mergedPhase;
+          });
+        }
+
+        profile = newProfile;
+        renderProfileFields();
+        renderPhases();
+        updateJsonAndChart();
+      } catch (err) {
+        console.error(err);
+        alert("Could not parse profile JSON.");
+      }
+    }
+
     // ---------------------------- Event wiring --------------------------------
     labelInput.addEventListener("input", () => {
       profile.label = labelInput.value;
-      updateJsonAndChart();
-    });
-
-    typeInput.addEventListener("change", () => {
-      profile.type = typeInput.value || "pro";
       updateJsonAndChart();
     });
 
@@ -1727,6 +1798,28 @@
           copyBtn.textContent = "📋 Copy JSON";
         }, 1600);
       }
+    });
+
+    importBtn.addEventListener("click", () => {
+      importFileInput.click();
+    });
+
+    importFileInput.addEventListener("change", (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          loadProfileFromJson(data);
+        } catch (err) {
+          console.error(err);
+          alert("Invalid JSON file.");
+        } finally {
+          importFileInput.value = "";
+        }
+      };
+      reader.readAsText(file);
     });
 
     // ------------------------------- Init -------------------------------------
