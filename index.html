@@ -326,6 +326,45 @@
       padding: 0.5rem 0.55rem 0.55rem;
     }
 
+    /* ---- Pump segmented control ---- */
+
+    .segmented-group {
+      display: inline-flex;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      overflow: hidden;
+      background: #020617;
+    }
+
+    .segmented-option {
+      flex: 1 1 auto;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .segmented-option + .segmented-option {
+      border-left: 1px solid var(--border-strong);
+    }
+
+    .segmented-option--active {
+      background: var(--accent-soft);
+      color: #f9fafb;
+    }
+
+    .pump-extra {
+      margin-top: 0.4rem;
+      display: none;
+    }
+
+    .pump-extra.active {
+      display: block;
+    }
+
     /* ---- Stop-when targets UI ---- */
 
     .targets-header-row {
@@ -453,6 +492,10 @@
       canvas {
         max-height: 220px;
       }
+
+      .segmented-group {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -522,8 +565,8 @@
     <section class="card">
       <h2>Phases</h2>
       <p class="small">
-        Each phase has its own temperature override, pump mode, valve state, stop conditions
-        (<strong>Stop when…</strong>), and transition. Tap a phase to expand its full settings.
+        Each phase has its own temperature override, pump mode, valve state, stop conditions,
+        and transition. Tap a phase to expand its full settings.
       </p>
 
       <div id="phases-list" class="phases-list"></div>
@@ -618,7 +661,6 @@
     };
 
     function makeDefaultProfile() {
-      // deep copy so edits don't mutate the template
       return JSON.parse(JSON.stringify(defaultProfile));
     }
 
@@ -645,7 +687,7 @@
       { value: "other", label: "Other" },
     ];
 
-    // Display modes for the "Stop when" UI
+    // Stop-when display modes
     const TargetDisplayModes = [
       {
         key: "water",
@@ -692,15 +734,11 @@
     ];
 
     function findModeForTarget(target) {
-      if (!target) return TargetDisplayModes[1]; // default to weight
-
+      if (!target) return TargetDisplayModes[1];
       if (target._displayKey) {
-        const byKey = TargetDisplayModes.find(
-          (m) => m.key === target._displayKey
-        );
+        const byKey = TargetDisplayModes.find((m) => m.key === target._displayKey);
         if (byKey) return byKey;
       }
-
       const byTypeOp = TargetDisplayModes.find(
         (m) => m.type === target.type && m.operator === target.operator
       );
@@ -710,7 +748,7 @@
     let profile = null;
     let chart = null;
 
-    // ---------------------- Pump helpers --------------------------------------
+    // ----------- Pump helpers (unchanged JSON behaviour) ----------------------
     function getPumpMode(phase) {
       const p = phase.pump;
       if (typeof p === "number") {
@@ -725,7 +763,6 @@
     function getPumpPressure(phase) {
       const p = phase.pump;
       if (typeof p === "number") {
-        // crude mapping for numeric power → pseudo pressure
         return p === 0 ? 0 : Math.round((p / 255) * 9);
       }
       return p && typeof p === "object" && typeof p.pressure === "number"
@@ -939,90 +976,185 @@
         basicSection.appendChild(basicRow);
         body.appendChild(basicSection);
 
-        // --- Pump settings ---
+        // --- Pump settings (segmented, mode-specific fields) ---
         const pumpSection = document.createElement("div");
         pumpSection.className = "phase-section";
         const pumpTitle = document.createElement("div");
         pumpTitle.className = "phase-section-title";
-        pumpTitle.textContent = "Pump";
+        pumpTitle.textContent = "Pump mode";
         pumpSection.appendChild(pumpTitle);
 
-        const pumpRow = document.createElement("div");
-        pumpRow.className = "field-row";
+        const pumpModeRow = document.createElement("div");
+        const seg = document.createElement("div");
+        seg.className = "segmented-group";
 
-        const modeDiv = document.createElement("div");
-        modeDiv.className = "field-small";
-        const modeLabel = document.createElement("label");
-        modeLabel.textContent = "Mode";
-        const pumpModeSelect = document.createElement("select");
-        [
+        const pumpModes = [
           { value: "off", label: "Off" },
-          { value: "power", label: "Power (0-255)" },
-          { value: "flow", label: "Flow target" },
-          { value: "pressure", label: "Pressure target" },
-        ].forEach((optCfg) => {
-          const opt = document.createElement("option");
-          opt.value = optCfg.value;
-          opt.textContent = optCfg.label;
-          if (mode === optCfg.value) opt.selected = true;
-          pumpModeSelect.appendChild(opt);
+          { value: "power", label: "Power" },
+          { value: "pressure", label: "Pressure" },
+          { value: "flow", label: "Flow" },
+        ];
+
+        let currentMode = mode;
+
+        const modeButtons = {};
+
+        pumpModes.forEach((cfg) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = cfg.label;
+          btn.className = "segmented-option";
+          if (cfg.value === currentMode) {
+            btn.classList.add("segmented-option--active");
+          }
+          btn.addEventListener("click", () => {
+            currentMode = cfg.value;
+            updateModeUI();
+            recomputePumpFromUI();
+          });
+          seg.appendChild(btn);
+          modeButtons[cfg.value] = btn;
         });
-        modeDiv.appendChild(modeLabel);
-        modeDiv.appendChild(pumpModeSelect);
-        pumpRow.appendChild(modeDiv);
 
-        const pressureDiv = document.createElement("div");
-        pressureDiv.className = "field-small";
-        const pressureLabel = document.createElement("label");
-        pressureLabel.textContent = "Pressure (bar / power)";
-        const pressureInput = document.createElement("input");
-        pressureInput.type = "number";
-        pressureInput.step = "0.1";
-        pressureInput.value =
-          mode === "power" && typeof phase.pump === "number"
-            ? phase.pump
-            : pressure;
-        pressureDiv.appendChild(pressureLabel);
-        pressureDiv.appendChild(pressureInput);
-        pumpRow.appendChild(pressureDiv);
+        pumpModeRow.appendChild(seg);
+        pumpSection.appendChild(pumpModeRow);
 
-        const flowDiv = document.createElement("div");
-        flowDiv.className = "field-small";
-        const flowLabel = document.createElement("label");
-        flowLabel.textContent = "Flow (ml/s)";
-        const flowInput = document.createElement("input");
-        flowInput.type = "number";
-        flowInput.step = "0.1";
-        flowInput.value = flow;
-        flowDiv.appendChild(flowLabel);
-        flowDiv.appendChild(flowInput);
-        pumpRow.appendChild(flowDiv);
+        // Extra fields by mode
+        const powerExtra = document.createElement("div");
+        powerExtra.className = "pump-extra";
+        const powerRow = document.createElement("div");
+        powerRow.className = "field-row";
+        const powerDiv = document.createElement("div");
+        powerDiv.className = "field-small";
+        const powerLabel = document.createElement("label");
+        powerLabel.textContent = "Pump power (0–255)";
+        const powerInput = document.createElement("input");
+        powerInput.type = "number";
+        powerInput.min = "0";
+        powerInput.step = "1";
+        powerInput.value =
+          typeof phase.pump === "number" && phase.pump > 0 ? phase.pump : 100;
+        powerInput.addEventListener("input", () => recomputePumpFromUI());
+        powerDiv.appendChild(powerLabel);
+        powerDiv.appendChild(powerInput);
+        powerRow.appendChild(powerDiv);
+        powerExtra.appendChild(powerRow);
+        pumpSection.appendChild(powerExtra);
 
-        pumpSection.appendChild(pumpRow);
+        const flowExtra = document.createElement("div");
+        flowExtra.className = "pump-extra";
+        const flowRow = document.createElement("div");
+        flowRow.className = "field-row";
+
+        const maxPressDiv = document.createElement("div");
+        maxPressDiv.className = "field-small";
+        const maxPressLabel = document.createElement("label");
+        maxPressLabel.textContent = "Maximum pressure (0 = ignore)";
+        const maxPressInput = document.createElement("input");
+        maxPressInput.type = "number";
+        maxPressInput.step = "0.1";
+        maxPressInput.value = pressure || 0;
+        maxPressInput.addEventListener("input", () => recomputePumpFromUI());
+        maxPressDiv.appendChild(maxPressLabel);
+        maxPressDiv.appendChild(maxPressInput);
+        flowRow.appendChild(maxPressDiv);
+
+        const targetFlowDiv = document.createElement("div");
+        targetFlowDiv.className = "field-small";
+        const targetFlowLabel = document.createElement("label");
+        targetFlowLabel.textContent = "Target flow";
+        const targetFlowInput = document.createElement("input");
+        targetFlowInput.type = "number";
+        targetFlowInput.step = "0.1";
+        targetFlowInput.value = flow || 0;
+        targetFlowInput.addEventListener("input", () => recomputePumpFromUI());
+        targetFlowDiv.appendChild(targetFlowLabel);
+        targetFlowDiv.appendChild(targetFlowInput);
+        flowRow.appendChild(targetFlowDiv);
+
+        flowExtra.appendChild(flowRow);
+        pumpSection.appendChild(flowExtra);
+
+        const pressureExtra = document.createElement("div");
+        pressureExtra.className = "pump-extra";
+        const pressureRow = document.createElement("div");
+        pressureRow.className = "field-row";
+
+        const targetPressDiv = document.createElement("div");
+        targetPressDiv.className = "field-small";
+        const targetPressLabel = document.createElement("label");
+        targetPressLabel.textContent = "Target pressure";
+        const targetPressInput = document.createElement("input");
+        targetPressInput.type = "number";
+        targetPressInput.step = "0.1";
+        targetPressInput.value = pressure || 0;
+        targetPressInput.addEventListener("input", () => recomputePumpFromUI());
+        targetPressDiv.appendChild(targetPressLabel);
+        targetPressDiv.appendChild(targetPressInput);
+        pressureRow.appendChild(targetPressDiv);
+
+        const maxFlowDiv = document.createElement("div");
+        maxFlowDiv.className = "field-small";
+        const maxFlowLabel = document.createElement("label");
+        maxFlowLabel.textContent = "Maximum flow (0 = ignore)";
+        const maxFlowInput = document.createElement("input");
+        maxFlowInput.type = "number";
+        maxFlowInput.step = "0.1";
+        maxFlowInput.value = flow || 0;
+        maxFlowInput.addEventListener("input", () => recomputePumpFromUI());
+        maxFlowDiv.appendChild(maxFlowLabel);
+        maxFlowDiv.appendChild(maxFlowInput);
+        pressureRow.appendChild(maxFlowDiv);
+
+        pressureExtra.appendChild(pressureRow);
+        pumpSection.appendChild(pressureExtra);
+
         body.appendChild(pumpSection);
 
-        const syncPump = () => {
-          const modeVal = pumpModeSelect.value;
-          const pVal = parseFloat(pressureInput.value);
-          const fVal = parseFloat(flowInput.value);
-          const powerVal = parseFloat(pressureInput.value); // reused
-          setPump(phase, modeVal, pVal, fVal, powerVal);
+        function updateModeUI() {
+          pumpModes.forEach((cfg) => {
+            if (modeButtons[cfg.value]) {
+              modeButtons[cfg.value].classList.toggle(
+                "segmented-option--active",
+                cfg.value === currentMode
+              );
+            }
+          });
 
-          const newMode = getPumpMode(phase);
-          m3.textContent = `Pump: ${newMode}`;
+          powerExtra.classList.toggle("active", currentMode === "power");
+          flowExtra.classList.toggle("active", currentMode === "flow");
+          pressureExtra.classList.toggle("active", currentMode === "pressure");
 
+          m3.textContent = `Pump: ${currentMode}`;
+        }
+
+        function recomputePumpFromUI() {
+          const powerVal = parseFloat(powerInput.value);
+          const maxPressVal = parseFloat(maxPressInput.value);
+          const targetFlowVal = parseFloat(targetFlowInput.value);
+          const targetPressVal = parseFloat(targetPressInput.value);
+          const maxFlowVal = parseFloat(maxFlowInput.value);
+
+          if (currentMode === "off") {
+            setPump(phase, "off", 0, 0, 0);
+          } else if (currentMode === "power") {
+            setPump(phase, "power", 0, 0, powerVal);
+          } else if (currentMode === "flow") {
+            setPump(phase, "flow", maxPressVal, targetFlowVal, 0);
+          } else if (currentMode === "pressure") {
+            setPump(phase, "pressure", targetPressVal, maxFlowVal, 0);
+          }
           updateJsonAndChart();
-        };
-        pumpModeSelect.addEventListener("change", syncPump);
-        pressureInput.addEventListener("input", syncPump);
-        flowInput.addEventListener("input", syncPump);
+        }
+
+        updateModeUI();
 
         // --- Transition ---
         const transSection = document.createElement("div");
         transSection.className = "phase-section";
         const transTitle = document.createElement("div");
         transTitle.className = "phase-section-title";
-        transTitle.textContent = "Transition to next phase";
+        transTitle.textContent = "Ramp style / transition";
         transSection.appendChild(transTitle);
 
         const transRow = document.createElement("div");
@@ -1270,7 +1402,6 @@
     // --------------------------- JSON & chart ---------------------------------
     function buildExportJson() {
       const exportProfile = JSON.parse(JSON.stringify(profile));
-      // strip UI-only keys
       if (exportProfile.phases) {
         exportProfile.phases.forEach((p) => {
           (p.targets || []).forEach((t) => {
@@ -1289,22 +1420,19 @@
       jsonPreview.value = JSON.stringify(exportProfile, null, 2);
     }
 
-    // Easing helpers for transitions
     function easeProgress(type, r) {
       r = Math.max(0, Math.min(1, r));
       switch (type) {
         case "linear":
           return r;
         case "ease-in":
-          return r * r; // quadratic ease-in
+          return r * r;
         case "ease-out":
-          return 1 - (1 - r) * (1 - r); // quadratic ease-out
+          return 1 - (1 - r) * (1 - r);
         case "ease-in-out":
-          return r < 0.5
-            ? 2 * r * r
-            : 1 - 2 * (1 - r) * (1 - r); // smooth-ish
+          return r < 0.5 ? 2 * r * r : 1 - 2 * (1 - r) * (1 - r);
         default:
-          return r; // treat unknown like linear
+          return r;
       }
     }
 
@@ -1316,7 +1444,6 @@
       const phases = profile.phases || [];
       if (!phases.length) return;
 
-      // Precompute phase start times and total time
       const phaseStartTimes = [];
       let totalTime = 0;
       phases.forEach((p, i) => {
@@ -1324,7 +1451,7 @@
         totalTime += Number(p.duration) || 0;
       });
 
-      const timeStep = 0.25; // finer step so easing curves look smooth
+      const timeStep = 0.25;
       const labels = [];
       const pressureData = [];
       const flowData = [];
@@ -1334,7 +1461,6 @@
         const rounded = Math.round(t);
         labels.push(rounded % 5 === 0 ? rounded : "");
 
-        // Find which phase we're in at time t
         let phaseIndex = phases.length - 1;
         let phaseStart = phaseStartTimes[phaseIndex];
         let phaseEnd =
@@ -1358,7 +1484,6 @@
         let pressure = basePressure;
         let flow = baseFlow;
 
-        // Transition belongs to this phase: ease from PREVIOUS phase into THIS phase
         const transition =
           phase.transition || { type: "instant", duration: 0, adaptive: true };
         const transDuration = Number(transition.duration) || 0;
@@ -1380,7 +1505,6 @@
             const rawR = (t - rampStart) / (rampEnd - rampStart || 1);
             const easedR = easeProgress(transition.type, rawR);
 
-            // interpolate from prev → current
             pressure =
               prevPressure + (basePressure - prevPressure) * easedR;
             flow = prevFlow + (baseFlow - prevFlow) * easedR;
