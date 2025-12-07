@@ -1347,6 +1347,11 @@
               target.type = selectedMode.type;
               target.operator = selectedMode.operator;
               unitSpan.textContent = selectedMode.unit;
+
+              // Reset value to 0 whenever condition type changes
+              target.value = 0;
+              valInput.value = "0";
+
               updateJsonAndChart();
             });
 
