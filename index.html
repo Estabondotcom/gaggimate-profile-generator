@@ -679,12 +679,10 @@
     const downloadBtn = document.getElementById("download-json");
     const copyBtn = document.getElementById("copy-json");
 
+    // Only Preinfusion and Brew in the type dropdown
     const PhaseTypes = [
       { value: "preinfusion", label: "Preinfusion" },
-      { value: "bloom", label: "Bloom" },
       { value: "brew", label: "Brew" },
-      { value: "flush", label: "Flush" },
-      { value: "other", label: "Other" },
     ];
 
     // Stop-when display modes
@@ -748,7 +746,7 @@
     let profile = null;
     let chart = null;
 
-    // ----------- Pump helpers (unchanged JSON behaviour) ----------------------
+    // ----------- Pump helpers ----------------------
     function getPumpMode(phase) {
       const p = phase.pump;
       if (typeof p === "number") {
@@ -760,10 +758,12 @@
       return "flow";
     }
 
+    // Treat numeric pump values as 0–100% and approximate pressure 0–9 bar
     function getPumpPressure(phase) {
       const p = phase.pump;
       if (typeof p === "number") {
-        return p === 0 ? 0 : Math.round((p / 255) * 9);
+        if (p === 0) return 0;
+        return (p / 100) * 9;
       }
       return p && typeof p === "object" && typeof p.pressure === "number"
         ? p.pressure
@@ -781,12 +781,15 @@
     function setPump(phase, mode, pressureVal, flowVal, powerVal) {
       const pressure = isNaN(pressureVal) ? 0 : pressureVal;
       const flow = isNaN(flowVal) ? 0 : flowVal;
-      const power = isNaN(powerVal) ? 0 : powerVal;
+      let power = isNaN(powerVal) ? 0 : powerVal;
+
+      // clamp power to 0–100%
+      power = Math.max(0, Math.min(100, power));
 
       if (mode === "off") {
         phase.pump = 0;
       } else if (mode === "power") {
-        phase.pump = Math.max(0, Math.min(255, power));
+        phase.pump = power; // 0–100
       } else if (mode === "flow") {
         phase.pump = {
           target: "flow",
@@ -887,7 +890,7 @@
         nameDiv.appendChild(nameInput);
         basicRow.appendChild(nameDiv);
 
-        // Type
+        // Type (only Preinfusion / Brew)
         const typeDiv = document.createElement("div");
         const typeLabel = document.createElement("label");
         typeLabel.textContent = "Type";
@@ -1027,10 +1030,11 @@
         const powerDiv = document.createElement("div");
         powerDiv.className = "field-small";
         const powerLabel = document.createElement("label");
-        powerLabel.textContent = "Pump power (0–255)";
+        powerLabel.textContent = "Pump power % (0–100)";
         const powerInput = document.createElement("input");
         powerInput.type = "number";
         powerInput.min = "0";
+        powerInput.max = "100";
         powerInput.step = "1";
         powerInput.value =
           typeof phase.pump === "number" && phase.pump > 0 ? phase.pump : 100;
